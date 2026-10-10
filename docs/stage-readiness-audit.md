@@ -48,12 +48,18 @@
 - Provider credentials and entitlement decisions are server-side; marketplace discovery remains disabled unless the exact access route and permitted use are verified.
 - Stage 20 requires test evidence, not architecture text, mock-only tests, or a green build alone, for release-critical behavior.
 
-## Correction made during this scan
+## Corrections made during this scan
+
+### Sources handoff
 
 The separate Sources page contract had been added, but Stage 2's canonical journey did not explicitly enumerate it and Stage 4 did not spell out the rule that capability routing must never silently add unselected sources. Both contracts have now been updated:
 
 - Stage 2 includes the Sources page, per-user saved selections, truthful support states, accessibility, empty/error states, and links to the owning contracts.
 - Stage 4 explicitly defines the effective discovery set as the intersection of user-selected, operation-supported, policy-permitted, configured, and operational sources.
+
+### Catalog test contract
+
+CI exposed two failures after the catalog expanded: the identifier for 99designs violated the stable-ID format, and the test asserted retired category-level IDs rather than current source IDs. The catalog ID was normalized to `designs_99`, and the coverage assertion now checks real catalog entries. Both the push and pull-request CI runs for commit `77885cea06d39936925af72e206a9400f7efe0d9` completed successfully, including TypeScript type-checking and Vitest.
 
 ## Coding sequence authorized by this audit
 
@@ -69,6 +75,6 @@ The separate Sources page contract had been added, but Stage 2's canonical journ
 ## Evidence and limits
 
 - The 20 stage files and their dedicated stage commits were found in the repository history.
-- This audit is a specification and repository-structure review. It does not claim the new commits passed CI unless a corresponding workflow result is observed.
+- This audit is a specification and repository-structure review. The domain baseline's TypeScript type-check and Vitest suite passed in CI for commit `77885cea06d39936925af72e206a9400f7efe0d9`; this does not establish live integrations, end-to-end security, or production readiness.
 - The current code baseline covers selected domain contracts and tests only. Live Gumroad/Tavily behavior, the Sources UI, saved source preferences, persistence, deployment, and end-to-end security remain implementation acceptance areas owned by their stages.
 - Stage handoff issues must remain open until their implementation acceptance evidence exists; closing them from this document alone would violate Stage 20's own release discipline.
