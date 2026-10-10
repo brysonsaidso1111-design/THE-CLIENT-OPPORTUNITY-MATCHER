@@ -166,6 +166,10 @@ Source routing is not ranking of opportunities.
 
 It only determines where discovery should be attempted.
 
+**User-selection constraint:** capability routing must be applied only after the authenticated user's saved source selection is loaded and authorized. The effective discovery set is the intersection of (1) sources explicitly selected by that user, (2) sources that support the required operation, (3) sources allowed by the current policy/access rules, and (4) sources whose required setup and operational health permit execution. Capability routing must never silently add an unselected source. Unknown, unsupported, unauthorized, or unavailable selections must be returned as explicit per-source states, not counted as searched.
+
+The home-page Sources experience, saved-selection semantics, and UI states are defined in [the Stage 2 journey](./stage-02-user-journey-and-experience.md) and the [Sources page contract](../source-selection.md). Stage 17 owns authorization and isolation policy; Stage 19 owns persistence and runtime enforcement.
+
 ---
 
 ### Decision 5 — Freshness, duplicates, and failures
