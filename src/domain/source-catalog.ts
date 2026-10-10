@@ -63,7 +63,7 @@ export const SOURCE_CATALOG: readonly SourceDefinition[] = [
   { id: "guru", name: "Guru", category: "freelance_marketplace", description: "Freelance jobs across service categories.", supportMode: "link_out", operationalState: "not_verified", websiteUrl: "https://www.guru.com/" },
   { id: "workana", name: "Workana", category: "freelance_marketplace", description: "Freelance projects, especially across Latin American markets.", supportMode: "link_out", operationalState: "not_verified", websiteUrl: "https://www.workana.com/" },
   { id: "toptal", name: "Toptal", category: "freelance_marketplace", description: "Vetted talent network for experienced specialists.", supportMode: "link_out", operationalState: "not_verified", websiteUrl: "https://www.toptal.com/" },
-  { id: "99designs", name: "99designs", category: "freelance_marketplace", description: "Design projects and design contests.", supportMode: "link_out", operationalState: "not_verified", websiteUrl: "https://99designs.com/" },
+  { id: "designs_99", name: "99designs", category: "freelance_marketplace", description: "Design projects and design contests.", supportMode: "link_out", operationalState: "not_verified", websiteUrl: "https://99designs.com/" },
   { id: "designhill", name: "Designhill", category: "freelance_marketplace", description: "Design briefs, contests, and creative work.", supportMode: "link_out", operationalState: "not_verified", websiteUrl: "https://www.designhill.com/" },
   { id: "truelancer", name: "Truelancer", category: "freelance_marketplace", description: "Freelance jobs and projects across disciplines.", supportMode: "link_out", operationalState: "not_verified", websiteUrl: "https://www.truelancer.com/" },
 
