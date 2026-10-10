@@ -68,3 +68,5 @@ jobs:
           retention-days: 7
 
 # The committed lockfile is subsequently validated by a clean npm ci on the updated candidate branch.
+
+# Re-run after the generated lockfile and evidence were committed to the candidate branch.
