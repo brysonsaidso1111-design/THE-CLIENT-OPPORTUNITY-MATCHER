@@ -68,3 +68,19 @@ Use a stable ID such as `BUG-001` for each actual code defect.
 - **P3 — Low:** minor presentation, maintainability, or non-critical polish.
 
 Never mark a defect VERIFIED merely because a change was committed. Verification requires the relevant regression test or an explicitly documented manual check and result.
+
+
+## Additional contract-reconciliation findings — 2026-10-10
+
+| ID | Severity | Owner | Status | Evidence / defect | Required disposition |
+|---|---|---|---|---|---|
+| DOC-002 | P1 / release-blocking | Stages 2, 3, 17, 19, 20 | Corrected in proposed branch; review required | Earlier authoritative wording described activation keys, automatic Gumroad license/API/webhook verification, and recurring refund/dispute reconciliation, conflicting with the owner-approved manual review flow. | Review the contract-reconciliation branch and verify stale paths are removed before merge. |
+| BASE-006 | P1 / release-blocking | Stage 19; release impact Stage 20 | BLOCKED — runtime spike not executable on baseline | Recursive tree and README at `3743878c1c17ab3e7a89b6eb1e8b5c9b58e84c5a` show no `package.json`, lockfile, app source, migrations, automated test suite, or `.github/workflows` CI workflow. | Do not claim the runtime spike passed. Implement the minimal spike harness after contract reconciliation, then run and record real version/command/exit-status evidence. |
+
+
+## Additional contract-reconciliation findings — 2026-10-10
+
+| ID | Severity | Owner | Status | Evidence / defect | Required disposition |
+|---|---|---|---|---|---|
+| DOC-002 | P1 / release-blocking | Stages 2, 3, 17, 19, 20 | Corrected in proposed branch; review required | Earlier authoritative wording described activation keys, automatic Gumroad license/API/webhook verification, and recurring refund/dispute reconciliation, conflicting with the owner-approved manual review flow. | Review the contract-reconciliation branch and verify stale paths are removed before merge. |
+| BASE-006 | P1 / release-blocking | Stage 19; release impact Stage 20 | BLOCKED — runtime spike not executable on baseline | Recursive tree and README at `3743878c1c17ab3e7a89b6eb1e8b5c9b58e84c5a` show no `package.json`, lockfile, app source, migrations, automated test suite, or `.github/workflows` CI workflow. | Do not claim the runtime spike passed. Implement the minimal spike harness after contract reconciliation, then run and record real version/command/exit-status evidence. |

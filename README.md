@@ -14,7 +14,7 @@ This repository currently contains the **20-stage architecture specifications** 
 - Preserve the approved 20-stage order, responsibilities, shared contracts, and handoffs. Do not redesign the architecture as a shortcut.
 - Build **one coherent application**, not 20 separate applications.
 - Follow the engineering cycle: **Inspect → Analyze → Build → Test → Review → Commit → Push → Handoff**.
-- Begin implementation with the Stage 19 compatibility spike. Confirm the selected runtime/build path, secure session approach, persistence and user isolation, secret injection, and CI path before full feature coding.
+- Begin implementation with the Stage 19 compatibility spike. Confirm the selected runtime/build path, secure session approach, persistence and user isolation, secret injection, and CI path before full feature coding. The first-release paid-access path is manual Gumroad/Selar purchase review by the configured owner; automatic provider API/webhook/license integration is not assumed.
 - If the spike exposes a genuine incompatibility, record the evidence and pause for an explicit decision. Do not weaken security or silently replace an approved architectural decision to force a pass.
 - Ordinary implementation corrections (such as imports, types, validation, error handling, dependency compatibility, and internal code organization) are allowed when they preserve the approved contracts. Escalate changes to product behavior, shared contracts, security boundaries, data ownership, or the selected technology stack.
 - Stage 20 is a release gate, not a claim that implementation or production validation has already passed.

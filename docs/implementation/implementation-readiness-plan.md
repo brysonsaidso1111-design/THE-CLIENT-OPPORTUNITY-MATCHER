@@ -14,9 +14,9 @@ This preparation pack completes the documentation, implementation sequencing, te
 
 - Preserve the existing 20-stage order, names, ownership boundaries, inputs, outputs, and handoffs. The existing stage documents are authoritative.
 - Build one coherent modular application, not 20 separate applications or microservices.
-- Use the Stage 19 approved defaults: Next.js App Router + React + TypeScript; Cloudflare Workers through OpenNext; Supabase Auth with cookie-based server sessions via @supabase/ssr; Supabase PostgreSQL; Gumroad purchase/license verification and reconciliation; Tavily through a server-only adapter; Vitest and Playwright; GitHub Actions; structured redacted server telemetry.
+- Use the Stage 19 approved defaults: Next.js App Router + React + TypeScript; Cloudflare Workers through OpenNext; Supabase Auth with cookie-based server sessions via @supabase/ssr; Supabase PostgreSQL; manual Gumroad/Selar purchase review and owner-controlled entitlement approval; Tavily through a server-only adapter; Vitest and Playwright; GitHub Actions; structured redacted server telemetry.
 - Exact dependency versions, the Cloudflare/OpenNext path, Supabase SSR cookie/session behavior, migrations/RLS, and secret injection remain subject to the mandatory compatibility spike. Pin exact compatible versions in the lockfile before full feature implementation.
-- Gumroad license-key activation remains the approved buyer activation path. If the actual product/API cannot meet the contract, stop and request an explicit design decision; do not silently add a delivery provider or weaken paid access.
+- Manual purchase review is the approved first-release activation path: the owner checks the Gumroad/Selar order record and approves the matching app account. Automatic provider API/webhook/license-key activation is out of scope; do not silently implement it.
 - Upwork and Fiverr automated buyer-demand discovery remain disabled unless written authorization for the exact surface and permitted commercial use is documented. No scraping, unofficial endpoints, session-cookie reuse, profile harvesting, or use of Tavily to bypass marketplace restrictions.
 - The optional dedicated user PIN is out of first-release scope. It cannot replace authentication or entitlement.
 - Stage 17 owns security semantics; Stage 19 implements them. Stage 18 owns event/metric semantics; Stage 19 emits them. Stage 20 independently verifies evidence and decides release readiness.
@@ -31,7 +31,7 @@ This is the first coding activity after the preparation pack is merged. Keep it 
 3. Use a non-production database to prove migrations, row-level security, user-scoped reads/writes, transactions/unique constraints, and cross-user denial.
 4. Inject a dummy secret using the hosting runtime's server-only secret mechanism; prove it is absent from client assets, browser responses, source maps, and logs.
 5. Exercise a minimal server-only Tavily adapter with deterministic fixtures and typed SUCCESS, SUCCESS_EMPTY, SUCCESS_PARTIAL, DENIED, and FAILED outcomes.
-6. Verify the documented Gumroad license and sale-status APIs, product binding, non-incrementing license validation, activation uniqueness/concurrency, refunds/disputes/revocation visibility, reconciliation, and outage semantics using controlled test configuration. Do not assume Ping is signed or a complete refund/dispute event stream.
+6. Verify owner-only approval/revoke/block actions, entitlement persistence, audit, RLS, current server-side authorization, and fail-closed behavior. Manual review is an out-of-band human action, not a live provider integration.
 7. Prove CI can install from the lockfile and run type-check, lint, unit/contract tests, and a production build without production secrets.
 8. Record commands, versions, environment, results, failed checks, evidence links, and unresolved risks in the Stage 19 issue and defect register.
 
@@ -79,7 +79,7 @@ Infrastructure needed earlier than its semantic owner is permitted only as an en
 - Never trust a checkout redirect, browser state, hidden field, or client-supplied entitlement flag as purchase proof.
 - Every protected server operation checks authenticated identity, entitlement freshness, and ownership.
 - Enforce unique/atomic activation binding; process purchase notifications idempotently; reconcile current sale/refund/dispute status through documented authoritative API behavior.
-- Keep Tavily, Gumroad, database service-role, and webhook secrets server-only; never log credentials or raw sensitive payloads.
+- Keep Tavily and database service-role secrets server-only; never log credentials or raw sensitive payloads. The manual first-release flow does not require a Gumroad/Selar API or webhook secret.
 - Keep user data row-scoped and enforce database RLS as defense in depth. Test cross-user read/write denial.
 - Preserve provider-versus-original-publisher provenance. Treat external content as untrusted data, not instructions.
 - Fail closed for new activations when purchase verification is unavailable. Distinguish expected DENIED + denial_code from technical FAILED + failure_code. Never convert technical failure to empty success.
@@ -94,7 +94,7 @@ Infrastructure needed earlier than its semantic owner is permitted only as an en
 - [ ] CI runs type-check, lint, unit/contract tests, and build from a clean checkout.
 - [ ] Server-only secret and two-user isolation checks pass.
 - [ ] Database migration/RLS proof passes in a non-production environment.
-- [ ] Gumroad integration assumptions are verified or explicitly blocked with evidence; no insecure fallback is allowed.
+- [ ] Manual purchase-review contracts are consistent; owner actions are server-authorized, auditable, isolated, and fail closed. Automatic Gumroad/Selar API/webhook integration is not assumed.
 - [ ] Open blockers and accepted/deferred scope are recorded.
 
 ## 9. Linked control documents
