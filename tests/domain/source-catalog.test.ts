@@ -19,7 +19,8 @@ describe("source catalog", () => {
     }
   });
 
-  it("includes the initial client-discovery source categories", () => {
+  it("covers a broad, extensible set of freelancer discovery sources", () => {
+    expect(SOURCE_CATALOG.length).toBeGreaterThanOrEqual(50);
     expect(SOURCE_CATALOG.map((source) => source.id)).toEqual(
       expect.arrayContaining([
         "upwork",
@@ -29,6 +30,12 @@ describe("source catalog", () => {
         "business_directories",
         "online_communities",
         "job_boards",
+        "reddit",
+        "github",
+        "behance",
+        "google_maps",
+        "government_tenders",
+        "referrals",
       ]),
     );
   });
