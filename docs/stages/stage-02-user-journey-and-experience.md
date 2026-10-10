@@ -145,7 +145,24 @@ Potential preference areas include:
 
 Preferences must remain distinguishable from hard requirements.
 
-### 5.4 Opportunity Hunt state
+### 5.4 Sources
+
+**Purpose:** Let users choose the channels where the product should look for client opportunities before they run a Hunt.
+
+The home page must expose a prominent **Sources** destination and show a saved-selection count. The Sources page must group the source catalog by understandable categories and distinguish a user's enabled preference from actual integration capability.
+
+Required behavior:
+- Users can select/deselect sources, save the selection, and see it restored on reload.
+- Selections are private to the authenticated user; the server, not browser state, is authoritative.
+- A Hunt may search only sources that are both selected by that user and genuinely supported for the requested operation.
+- Show truthful source support and operational states, including manual workflow, link-out, setup required, unavailable, and unsupported. Catalog presence must never imply a live integration.
+- If no selected source is usable, explain why and offer a useful next step; do not fabricate a search or imply a source was searched.
+- Preserve source identity and original listing URL, retrieval time, and evidence/provenance through the discovery pipeline.
+- Cover loading, saved/unsaved selection, empty selection, unsupported source, setup-required, degraded/unavailable, valid zero-results, and success states with accessible keyboard interaction.
+
+The authoritative source catalog and source-selection behavior contract is `../source-selection.md`; Stage 4 owns discovery routing and Stage 17/19 own authorization, persistence, and server-side enforcement.
+
+### 5.5 Opportunity Hunt state
 
 **Purpose:** Communicate that the system is actively processing the brief and researching opportunities.
 
@@ -400,6 +417,7 @@ The Stage 3 link resolves to the existing authoritative Stage 3 specification. S
 Stage 2 can only PASS when:
 
 - The journey is complete from entry through decision and management.
+- The home page exposes the Sources page; per-user source selection, truthful capability states, accessible UI states, and server-enforced selection are specified and handed to Stages 3, 4, 17, and 19.
 - The five user architecture decisions are represented accurately.
 - All major experience states are defined.
 - Results categories are defined without collapsing the underlying intelligence model.
@@ -436,7 +454,7 @@ Stage 2 implementation is the authoritative journey and experience specification
 - Stage 1 handoff requirements were checked against the Stage 2 journey.
 - All five user decisions were checked against the specification.
 - The complete primary journey is represented.
-- Major screens and states are represented.
+- Major screens and states are represented, including the Sources page and saved source-selection states.
 - Empty, weak, verification, stale, missing information, conflict, search failure, and degraded states are represented.
 - Match and opportunity quality remain distinct.
 - Evidence, reasoning, uncertainty, and risk remain visible experience requirements.
