@@ -44,6 +44,10 @@ This repository currently contains the **20-stage architecture specifications** 
 
 Stage-specific GitHub handoff issues are **#1–#12 and #14–#21**. Issue **#13** is the separate cross-stage audit, not Stage 13. The separate Sources-page implementation issue is **#23**.
 
+## Implementation preparation pack
+
+Before feature coding, use the complete [implementation readiness plan](docs/implementation/implementation-readiness-plan.md), [20-stage implementation matrix](docs/implementation/stage-implementation-matrix.md), and [testing, environment, and release evidence plan](docs/implementation/testing-environment-and-release-evidence.md). These documents preserve the existing stage specifications as the source of truth and define the compatibility spike, per-stage outputs/tests, commit grouping, and existing-issue handoff updates.
+
 ## Implementation baseline and defect register
 
 The current inventory and open implementation/verification blockers are tracked in [the implementation baseline and defect register](docs/implementation/implementation-baseline-and-defect-register.md). Update it with evidence as artifacts are added; do not record absent files with invented paths or line numbers.
