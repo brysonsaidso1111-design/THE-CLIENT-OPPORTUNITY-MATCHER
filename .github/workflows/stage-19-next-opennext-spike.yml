@@ -63,3 +63,5 @@ jobs:
           path: package-lock.json
           if-no-files-found: error
           retention-days: 7
+
+# The committed lockfile is subsequently validated by a clean npm ci on the updated candidate branch.
