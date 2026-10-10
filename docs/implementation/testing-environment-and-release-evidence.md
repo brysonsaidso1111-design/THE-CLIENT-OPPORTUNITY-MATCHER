@@ -8,7 +8,7 @@ This is the common verification contract for all 20 stage handoffs. Detailed sta
 |---|---|---|---|
 | Local development | Fast deterministic unit/contract/UI work | Local-only dummy secrets and synthetic fixtures | Never use production credentials or buyer data |
 | CI / pull request | Reproducible install, lint, type-check, unit/contract tests, build, selected security checks | No production secrets; use fixtures and ephemeral test configuration | Required checks must pass before merge |
-| Integration test | Controlled provider/API contract checks and database behavior | Dedicated test project/database, synthetic users, test provider credentials where available | Label mock vs live; no real purchase/refund/application actions |
+| Integration test | Controlled provider/API contract checks and database behavior | Dedicated test project/database, synthetic users, synthetic buyer accounts and owner-controlled manual review records | Label mock vs live; no real purchase/refund/application actions |
 | Staging | Full deployment rehearsal and end-to-end security/recovery checks | Separate staging secrets, database, webhook endpoint, test purchase data | No production buyer records; release candidate identified by commit SHA |
 | Production | Paying users | Least-privilege production secrets and durable records | Deploy only after Stage 20 GO and verified rollback/recovery plan |
 
@@ -17,12 +17,12 @@ This is the common verification contract for all 20 stage handoffs. Detailed sta
 1. **Static/repository:** clean install from lockfile; formatter/linter; TypeScript type-check; secret scanning; dependency/security checks as selected; production build.
 2. **Unit:** pure domain rules and policy functions; deterministic fixtures; explicit boundary-value cases.
 3. **Contract:** stage inputs/outputs, typed result envelopes, schema validation, version compatibility, and prohibition of hidden semantic changes.
-4. **Adapter:** Tavily, Gumroad, persistence, telemetry, and hosting/runtime boundaries; test timeouts, malformed data, auth denial, rate limits, and unavailable services.
-5. **Database:** migrations, constraints, transaction/atomic activation, RLS, ownership, concurrency, idempotency, backup/restore, and forward recovery.
-6. **Security/adversarial:** unauthenticated access, entitlement bypass, wrong product, stale/revoked entitlement, cross-user reads/writes, session refresh/expiry/logout, webhook replay/forgery, secret leakage, unsafe cache headers, injection/untrusted external content, and abuse/rate limits.
+4. **Adapter:** Tavily, manual entitlement actions, persistence, telemetry, and hosting/runtime boundaries; test timeouts, malformed data, auth denial, rate limits, and unavailable services.
+5. **Database:** migrations, constraints, transaction/atomic entitlement decisions, owner authorization, RLS, ownership, concurrency, idempotency, backup/restore, and forward recovery.
+6. **Security/adversarial:** unauthenticated access, entitlement bypass, wrong product, stale/revoked entitlement, cross-user reads/writes, session refresh/expiry/logout, customer self-approval, forged role/entitlement flags, unauthorized owner actions, secret leakage, unsafe cache headers, injection/untrusted external content, and abuse/rate limits.
 7. **Pipeline integration:** discovery → evidence → normalization → eligibility → semantic fit → score → rank → intelligence → quality/risk/recommendation; assert provenance, uncertainty, completeness, and failures survive every handoff.
-8. **User journey/e2e:** activation, protected access, create/edit brief, hunt/discovery, inspect evidence, compare, save/pass/apply-open, record actual outcome, feedback, lifecycle, empty/partial/degraded states, logout/revocation.
-9. **Resilience/recovery:** provider outage, timeout, rate limit, telemetry outage, uncertain persistence result, duplicate/out-of-order webhooks, concurrent action/activation, migration failure, restore, rollback, and recovery verification.
+8. **User journey/e2e:** registration, pending approval, owner approval, protected access, create/edit brief, hunt/discovery, inspect evidence, compare, save/pass/apply-open, record actual outcome, feedback, lifecycle, empty/partial/degraded states, logout/revocation.
+9. **Resilience/recovery:** provider outage, timeout, rate limit, telemetry outage, uncertain persistence result, duplicate owner actions, concurrent entitlement changes, migration failure, restore, rollback, and recovery verification.
 10. **Accessibility/usability:** keyboard-only path, focus order/visibility, labels and announcements, contrast, responsive behavior, and error/uncertainty comprehension.
 11. **Operational/release:** health/readiness, dependency capability status, required config, redacted logs, alert firing, migration state, deploy/rollback, secret rotation, runbook rehearsal, and post-rollback verification.
 

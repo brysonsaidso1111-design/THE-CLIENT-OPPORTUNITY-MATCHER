@@ -8,6 +8,27 @@
 **Previous stage:** Stage 18 — Analytics, Observability & Quality  
 **Next stage:** Stage 20 — Final Product Readiness & Launch Gate  
 **Status:** STAGE 19 — ARCHITECTURE CONSOLIDATED; IMPLEMENTATION AND RUNTIME VALIDATION NOT CLAIMED  
+
+## Owner-approved first-release integration contract — authoritative override
+
+This section supersedes conflicting earlier wording about automatic Gumroad purchase verification, license-key activation, purchase webhooks, and recurring refund/dispute reconciliation. The approved first-release path is manual purchase review: the configured owner checks a Gumroad or Selar order record outside the app and approves the matching app account through a protected owner-only dashboard/action. Registration starts in `PENDING`; only the owner can approve, revoke, or block.
+
+Stage 19 must implement the persistence and enforcement—not automatic purchase-provider integrations—for this flow:
+- server-side owner identity/allowlist and protected approve/revoke/block actions;
+- canonical entitlement state from Stage 3, purchase origin/reference metadata, decision actor/time, and privacy-minimized audit history;
+- authentication and entitlement checks on every protected server operation, ownership checks, RLS, private/no-store response behavior, and fail-closed errors;
+- subsequent protected requests deny pending/revoked/blocked accounts; no client-side role/status flag may grant access;
+- automated tests cover no self-approval, forged role/entitlement, unauthorized admin actions, cross-user isolation, atomic/concurrent/duplicate actions, revocation propagation, audit integrity, and auth/entitlement outages;
+- no paid email automation and no assumed Gumroad/Selar API, webhook, license-key activation, or automatic refund/dispute reconciliation.
+
+## Stage 19 compatibility spike preflight — actual result
+
+The repository baseline inspected for this change is `3743878c1c17ab3e7a89b6eb1e8b5c9b58e84c5a`. The README and recursive Git tree confirm that the baseline contains architecture/readiness documentation only: no application source tree, `package.json`, dependency lockfile, database migrations, automated app test suite, or GitHub Actions workflow. Therefore a runtime Next.js/OpenNext build, Supabase SSR session test, RLS/migration test, secret-injection test, Tavily adapter test, and CI run cannot execute against this baseline. These checks are **BLOCKED / NOT RUN**, not passed.
+
+The actual preflight and per-gate result table are recorded in `docs/implementation/stage-19-compatibility-spike-evidence.md`. Stage 19 must create the minimal isolated spike harness, pin versions, execute real checks in local/non-production environments, and append command output, environment, service mode, commit SHA, failures, and rerun evidence before full feature coding. No production credentials or real customer purchase records may be used.
+
+The stack compatibility spike remains the first technical gate. The contract reconciliation in this change does not claim runtime compatibility, and no full feature coding is authorized until the security-critical build/session/isolation/secret/migration gates pass.
+
 **Architecture decision set:** D / D / D / D / D
 
 ---
@@ -27,7 +48,7 @@ Stage 19 owns:
 - the server-side boundary for protected operations;
 - configuration and environment strategy;
 - storage and migration implementation decisions;
-- Gumroad purchase verification and entitlement reconciliation integration;
+- manual owner-reviewed entitlement persistence and enforcement;
 - buyer activation and authenticated session integration;
 - Tavily and future discovery-provider integration;
 - external content ingestion and provenance propagation;
@@ -74,38 +95,34 @@ Use explicit interfaces for:
 - telemetry;
 - time and other external capabilities where deterministic testing requires them.
 
-A provider-specific adapter translates native request/response/error formats into the canonical contracts from Stages 3–5 and 16. Domain code depends on those contracts, not on Tavily, Gumroad, a hosting vendor, or a database SDK. Vendor replacement should require changing an adapter and configuration, not rewriting eligibility or scoring.
+A provider-specific adapter translates native request/response/error formats into the canonical contracts from Stages 3–5 and 16. Domain code depends on those contracts, not on Tavily, manual entitlement review, a hosting vendor, or a database SDK. Vendor replacement should require changing an adapter and configuration, not rewriting eligibility or scoring.
 
 Keep the initial architecture intentionally modest: a modular application and server-side API boundary are preferred over microservices. Split a component into a separate service only when a measured operational, security, scaling, or ownership need justifies the additional network and deployment failure modes.
 
 **Why this is the best fit:** one product stays understandable and economical to maintain while security-sensitive and provider-specific work is kept out of the browser and out of domain logic.
 
-### Question 2: How should buyer-only access be integrated with Gumroad without treating a link or browser state as proof of purchase?
+### Question 2: How is buyer-only access implemented for the approved manual-review flow?
 
-**Decision: D — Server-verified purchase/entitlement records, unique activation credentials, and authorization on every protected server operation.**
+**Decision: D — Authenticated accounts with owner-reviewed purchase evidence and server-enforced, revocable entitlement.**
 
-The required buyer journey is:
+The required journey is:
 
-**Gumroad purchase → trusted purchase verification/reconciliation → entitlement record → quickstart PDF and app link plus a unique activation credential or secure activation path → server-side activation → authenticated session → entitlement and ownership checks on protected requests.**
+**Gumroad/Selar purchase → app registration/sign-in → PENDING → owner checks purchase record in the storefront → owner approves/revokes/blocks through protected owner-only controls → server enforces current entitlement on protected requests.**
 
 Integration requirements:
+1. Registration creates an authenticated identity only; it never grants paid entitlement.
+2. The configured owner independently reviews the purchase record outside the app and matches it to the app account. The app records only purchase origin, minimal review reference, decision actor/time, and a privacy-minimized reason.
+3. Only the configured owner identity/allowlist may use server-protected approve/revoke/block actions. The server must derive actor authority from the authenticated principal, not request fields.
+4. Persist one canonical state: `PENDING`, `ACTIVE`, `REVOKED`, or `BLOCKED`. Do not maintain `APPROVED` and `ACTIVE` as distinct persisted states.
+5. Owner mutations are validated, atomic, concurrency-safe, idempotent where applicable, and auditable. No user may self-approve or alter roles/entitlement.
+6. Every protected operation checks the current entitlement and resource ownership. RLS is defense in depth; client UI state is never authorization.
+7. Revocation/blocking denies subsequent protected requests. Entitlement-store/auth failures fail closed and map to Stage 16's typed failure/denial semantics.
+8. No automatic Gumroad/Selar API, license-key activation, purchase webhook, or recurring refund/dispute reconciliation is required in this release. Do not implement one from stale text without a separate approved architecture decision.
+9. Do not add paid email automation. Do not store full payment details or unnecessary storefront payloads.
+10. The Stage 19 compatibility spike still must prove the selected runtime, secure session handling, RLS/isolation, secret injection, and CI/build path before full feature coding.
 
-1. A checkout redirect or success page is not authoritative proof of payment. Entitlement is created or updated only from a verified provider event or a trusted server-to-server reconciliation process.
-2. Verify webhook authenticity according to the purchase provider's current documented mechanism. Validate event type and required fields; reject forged or malformed events.
-3. Make webhook processing idempotent. Duplicate delivery and retries must not create duplicate entitlements, send duplicate activations, or reverse a newer state.
-4. Persist provider event identifiers and processing status so retries can safely resume and failures can be reconciled.
-5. Map the purchase provider's stable product/variant identifier to the intended product entitlement. Do not rely solely on editable names or browser-supplied price/product values.
-6. Issue a unique, sufficiently unpredictable, single-use activation credential or equivalent secure activation flow. Store only a verifier/hash where practical; never store or log a reusable plaintext activation credential unnecessarily.
-7. Activation must atomically bind the entitlement to the authorized account/session identity. Concurrent activation attempts must not claim the same entitlement twice.
-8. After activation, create a secure session using a mature supported mechanism. Rotate session identifiers when required, protect cookies/tokens according to Stage 17, and implement logout, expiry, and revocation.
-9. Every protected request checks the authenticated identity, current entitlement, action permission, and resource ownership. A hidden route, client-side flag, hard-to-guess URL, or disabled button is not access control.
-10. Define and implement a bounded revocation propagation window for refund, chargeback, dispute, expiry, cancellation, manual revocation, or suspected compromise. Reconcile authoritative purchase state instead of relying indefinitely on a stale client session.
-11. Make activation and purchase-recovery messages helpful without revealing whether another person's account or entitlement exists.
-12. If purchase verification is unavailable or ambiguous, fail closed for granting new access and follow Stage 16's safe failure contract. Do not permanently penalize legitimate buyers for transient outages; provide safe retry and support recovery.
+The quickstart PDF and app URL are onboarding material, not security mechanisms. A manual review is a human owner action; it must not be represented as an automated provider verification.
 
-The quickstart PDF is onboarding material, not a security mechanism. The public app URL may be shared without granting access. The activation credential is separate from a Tavily API key, a session token, and any optional user PIN. A user PIN must never replace server authentication or entitlement verification.
-
-**Implementation decision:** the initial identity/session stack is locked in Section 14 below. Stage 17 continues to own security semantics; Stage 19 owns implementation. Do not begin authentication coding until the chosen versions are pinned in the lockfile and a minimal compatibility spike confirms that secure server-side sessions, entitlement checks, and revocation work on the selected runtime. Any incompatibility is a stop-and-review condition, not permission to weaken Stage 17.
 
 ### Question 3: How should Tavily and future providers be integrated safely and traceably?
 
@@ -117,7 +134,7 @@ The Tavily adapter must:
 - run only in a trusted server-side runtime;
 - obtain `TAVILY_API_KEY` from that runtime's secret store/environment configuration;
 - never request a Tavily key from buyers or expose it in HTML, browser JavaScript, browser storage, public API responses, source maps, logs, telemetry, screenshots, repository content, or error text;
-- keep provider credentials distinct from Gumroad webhook secrets, activation credentials, session credentials, and optional user PINs;
+- keep provider credentials distinct from session credentials and any future optional user PIN; no Gumroad webhook or buyer activation credential is required for the manual first release;
 - use the request and response schema documented for the actual Tavily API version selected at implementation time;
 - validate inputs and bound query length, result count, request duration, concurrency, and cost according to Stage 4's discovery budgets;
 - normalize successful responses to Stage 4's discovery-result contract and Stage 5's provenance contract;
@@ -178,8 +195,8 @@ Stage 19 must provide evidence that each integration preserves the contracts of 
 Required test layers:
 1. **Unit/contract tests:** domain contracts, operation envelopes, provider normalization, event schemas, entitlement state transitions, ownership checks, and idempotency behavior.
 2. **Adapter tests:** Tavily request construction, response normalization, timeout/rate-limit/auth/malformed-response handling, provenance fields, secret non-disclosure, and deterministic fixtures.
-3. **Webhook tests:** invalid signature, malformed payload, duplicate event, out-of-order event, retry after partial processing, replay, refund/chargeback/revocation, and reconciliation after provider outage.
-4. **Access-control tests:** no entitlement, invalid/expired/reused activation credential, concurrent activation, revoked/refunded entitlement, session expiry/logout, cross-user reads/writes, and guessed URL access.
+3. **Owner-action tests:** ordinary-user denial, no self-approval, forged role/status, duplicate/concurrent approve/revoke/block, audit consistency, revocation propagation, and fail-closed auth/store outages.
+4. **Access-control tests:** pending/revoked/blocked entitlement, unauthorized owner action, self-approval attempt, forged role/status, concurrent/duplicate owner actions, session expiry/logout, cross-user reads/writes, and guessed URL access.
 5. **Pipeline integration tests:** discovery → evidence/provenance → normalization → eligibility → match/scoring → ranking → intelligence/quality/recommendation, with typed failures and completeness preserved.
 6. **Persistence tests:** transaction boundaries, unique constraints, migration from previous schema, backup/restore, concurrent writes, idempotent retries, and uncertain write outcomes.
 7. **Observability tests:** required Stage 18 events are emitted from authoritative outcomes; event delivery failure is visible; secrets and unnecessary personal data are redacted.
@@ -224,16 +241,19 @@ This is a logical topology, not a mandate to deploy eight separate services. The
 9. Server emits Stage 18 events from the authoritative outcome, with correlation IDs and redaction.
 10. Server returns only the authorized response and safe error details.
 
-### 4.2 Purchase notification, verification, and entitlement
-1. Treat Gumroad Ping, where configured, as a **sale-notification hint**, not proof of purchase or entitlement. Gumroad's current [Ping help page](https://gumroad.com/help/article/174-third-party-analytics) describes Ping as sending sale-related information after a sale; do not assume that it signs payloads or emits separate refund/dispute event types unless the live account configuration and documented API prove that.
-2. Accept notifications only at a dedicated server endpoint with request-size limits, schema validation, rate controls, and redacted logging. Do not trust fields merely because they arrived at the endpoint; do not log the raw payload by default.
-3. Verify the relevant product and license/purchase state through the supported server-to-Gumroad API before changing local entitlement. If the event cannot be signed using a documented mechanism, corroborate it with the trusted API rather than inventing a signature check or trusting a hidden URL.
-4. For license-key validation/status checks, submit the configured `product_id` and the supplied license key to the supported verification endpoint. Explicitly use the non-incrementing mode (`increment_uses_count=false`) for routine validation/reconciliation. Never increment Gumroad license uses on every page load, session validation, retry, or refund check. Verify the current endpoint behavior in the compatibility spike; if the endpoint cannot provide the required state safely, stop and revise the integration design.
-5. Use the seller-authorized Sales API or another documented authoritative lookup to verify current sale status, including refund/dispute information where available. Keep any Gumroad access token server-side and least-privileged. Do not assume an unauthenticated license-verification response alone proves every refund/dispute state needed by the product.
-6. The app's durable entitlement record and unique activation-claim constraint are the authority for binding a purchase to one app account. Gumroad's usage counter is not the app's account-binding lock. Reserve/claim activation atomically in local persistence; make retries idempotent and reconcile uncertain outcomes before repeating any non-idempotent provider action.
-7. Deduplicate incoming notifications by a provider event identifier when one is documented and supplied; otherwise use a stable, verified sale/purchase reference plus event type and state version. Do not invent an event ID or assume delivery is exactly once.
-8. Reconcile active entitlement statuses on the Stage 17 cadence (at least every 15 minutes). Apply verified refund, dispute, disablement, or revocation immediately to the local entitlement and enforce it on the next protected request. If the provider lookup is unavailable, preserve the distinction between an unavailable status and a negative/invalid purchase; follow the Stage 16 failure contract and Stage 17's 24-hour stale-state bound.
-9. Stage 18 records safe funnel and failure outcomes without turning telemetry into entitlement authority.
+### 4.2 Manual purchase review and entitlement
+
+The first release does not receive or verify Gumroad/Selar purchase webhooks, call purchase/license APIs, or run recurring refund/dispute reconciliation. The configured owner checks the purchase record in the relevant storefront outside the app, then records a decision through a protected owner-only app action.
+
+1. New app registrations receive `PENDING` entitlement; neither a checkout redirect nor registration grants protected access.
+2. The owner authenticates through the configured owner identity/allowlist and matches the storefront record to the app account. Do not treat a buyer-supplied email, screenshot, or redirect as sufficient by itself.
+3. The owner action records purchase origin, minimal purchase reference, decision actor/time, and a privacy-minimized reason. Do not store full payment data or unnecessary storefront payloads.
+4. The server atomically validates and applies only permitted transitions to the canonical Stage 3 state (`PENDING`, `ACTIVE`, `REVOKED`, `BLOCKED`). `APPROVED` may be a UI label for `ACTIVE`, not a second persisted active state.
+5. Only the configured owner may approve, revoke, or block. Ordinary users cannot alter roles, target another user's account, or approve themselves.
+6. Every protected request checks the authenticated principal, current durable entitlement, and resource ownership. RLS remains defense in depth. Revocation/blocking denies subsequent protected requests.
+7. Auth/entitlement-store failure fails closed and maps to Stage 16's typed failure/denial contract. Do not convert technical failure into an invalid-purchase verdict or grant access.
+8. Owner actions are auditable, concurrency-safe, and idempotent where applicable. The application does not implement paid email automation or an automatic purchase-provider integration in this release.
+9. If automated provider verification is proposed later, stop and obtain a separate explicit product/architecture decision before adding credentials, APIs, webhook endpoints, reconciliation jobs, or new acceptance criteria.
 
 ### 4.3 Discovery through Tavily
 1. Authorized buyer submits a valid hunt/search request.
@@ -306,7 +326,7 @@ Required configuration:
 - webhook endpoint and authenticity-verification mechanism;
 - server-only webhook/API credentials where the provider requires them;
 - event-idempotency storage;
-- entitlement state mapping and reconciliation strategy.
+- canonical entitlement state mapping and owner decision/audit strategy.
 
 Required normalized behavior:
 - verify before processing;
@@ -398,7 +418,7 @@ Stage 4 owns discovery semantics; Stage 5 provenance; Stage 16 failure outcomes;
 | Item | Local development | Test/staging | Production |
 |---|---|---|---|
 | Tavily credential | Local server-only secret, ignored by version control | Test/restricted key in deployment secret store | Production key in managed hosting secret store |
-| Purchase webhook secret/credential | Test-mode or mock only | Provider test-mode endpoint and secret | Restricted production webhook credential |
+| Owner identity/allowlist | Synthetic test owner in test mode | Protected server-side owner configuration and authorization guard | No client-editable role or public configuration |
 | Entitlement data | Synthetic test records | Isolated test purchases/data | Authoritative production records |
 | Session signing/encryption secrets | Local-only random values | Separate staging values | Managed production secrets with rotation |
 | Database | Local/disposable | Isolated staging database | Production database with backups and access controls |
@@ -463,7 +483,7 @@ Before deployment:
 Maintain concise, actionable operator procedures for:
 - missing/rejected Tavily key;
 - Tavily rate limit/outage;
-- purchase webhook verification failure or delivery backlog;
+- unauthorized/failed owner entitlement actions or audit-write failures;
 - entitlement reconciliation and revocation;
 - activation/support recovery;
 - database outage or migration failure;
@@ -496,7 +516,7 @@ Requirements:
 - use Stage 16's stable failure taxonomy and operation envelope;
 - use Stage 18's event names, versioning, correlation IDs, denominators, and bounded-cardinality dimensions;
 - use Stage 17's data minimization, retention, access control, and redaction rules;
-- do not use raw user IDs, full query text, opportunity descriptions, activation credentials, session tokens, API keys, or raw provider payloads as metric labels;
+- do not use raw user IDs, full query text, opportunity descriptions, session tokens, API keys, or raw provider payloads as metric labels;
 - ensure a missing telemetry stream is itself detectable;
 - do not let telemetry events grant access or modify entitlement/domain state.
 
@@ -540,7 +560,7 @@ Stage 19 is architecturally ready for Stage 20 review only when all are true:
 - [ ] Domain logic is insulated from vendor-specific API formats through adapters.
 - [ ] The chosen hosting/runtime, identity/session approach, database, and telemetry stack are recorded before implementation, with reasons and constraints.
 - [ ] Buyer entitlement is derived from verified purchase state, not a redirect or client-side flag.
-- [ ] Webhook authenticity, idempotency, duplicate/out-of-order events, and reconciliation are specified and tested.
+- [ ] Owner-only approve/revoke/block actions are authorized, atomic/idempotent where applicable, audited, and tested. Automatic purchase webhooks/reconciliation are not required for this release.
 - [ ] Activation is single-use/atomic as applicable, and protected requests check current entitlement and ownership.
 - [ ] Revocation propagation and recovery are implemented and tested.
 - [ ] Tavily credentials are injected only server-side; browser assets, source maps, responses, logs, and telemetry are inspected for leakage.
@@ -571,7 +591,7 @@ Implement in this order to reduce expensive rework and prevent a stack incompati
 2. **Run the mandatory compatibility spike in Section 14.** This is the first implementation activity and the first stop/go gate. Prove the selected Next.js/Cloudflare OpenNext path, Supabase server-side session behavior, user-scoped database access, server-only secret injection, and the basic CI/build path. Do not begin full product feature implementation until this passes. If a required security property cannot be demonstrated, stop and approve a deliberate architecture adjustment.
 3. **Establish the server-side trust boundary.** Implement authentication/authorization middleware, environment validation, ownership enforcement, and safe error envelopes before wiring paid functionality.
 4. **Build persistence foundations.** Add schema/migrations, uniqueness constraints, user-scoped access, and test fixtures.
-5. **Implement entitlement integration.** Verify purchase events, idempotent entitlement updates, unique activation, sessions, revocation, and reconciliation before exposing protected app functions.
+5. **Implement entitlement integration.** Verify owner-only approve/revoke/block, idempotent/atomic state changes, sessions, revocation enforcement, RLS, and audit integrity before exposing protected app functions.
 6. **Implement the provider-neutral discovery contract.** Add typed outcomes and adapter tests using fixtures; only then wire Tavily with a server-side secret. Keep Upwork/Fiverr live capability flags off unless and until their independent authorization and permitted-use records are approved; do not scrape or use Tavily as a marketplace-policy bypass.
 7. **Preserve provenance through the pipeline.** Connect discovery to evidence and normalization while validating Stage 4–6 contracts.
 8. **Connect domain assessment stages.** Integrate eligibility through recommendation without changing their semantics; capture versions and completeness for reproducibility.
@@ -626,11 +646,11 @@ The purpose of this record is to remove avoidable technology ambiguity while pre
 | Concern | Approved initial choice | Binding implementation constraints |
 |---|---|---|
 | Application | Next.js App Router, React, TypeScript | One repository and one app. Keep domain logic in server-side modules and vendor-specific logic behind adapters. The browser owns presentation, not protected decisions or secrets. |
-| Production runtime/hosting | Cloudflare Workers using the established OpenNext adapter for Next.js App Router | This is an intentional risk-based exception to Cloudflare's current recommendation of vinext for new Next.js applications: vinext is in beta/active development and documents compatibility gaps, while OpenNext has the longer production track record. The app prioritizes mature behavior for paid access, server sessions, and protected data over adopting the newer toolchain by default. Run the mandatory compatibility spike covering route handlers, secure cookies, scheduled/reconciliation work if used, and Supabase connectivity. Pin supported versions. Do not switch to vinext mid-implementation; reconsider only through an explicit architecture review if the spike fails or vinext's compatibility evidence materially changes. |
+| Production runtime/hosting | Cloudflare Workers using the established OpenNext adapter for Next.js App Router | This is an intentional risk-based exception to Cloudflare's current recommendation of vinext for new Next.js applications: vinext is in beta/active development and documents compatibility gaps, while OpenNext has the longer production track record. The app prioritizes mature behavior for paid access, server sessions, and protected data over adopting the newer toolchain by default. Run the mandatory compatibility spike covering route handlers, secure cookies, scheduled work only if independently required by another approved capability, and Supabase connectivity. Pin supported versions. Do not switch to vinext mid-implementation; reconsider only through an explicit architecture review if the spike fails or vinext's compatibility evidence materially changes. |
 | Identity and sessions | Supabase Auth with cookie-based server-side sessions via `@supabase/ssr` | Supabase documents `@supabase/ssr` as beta/unstable; pin the exact compatible version, encapsulate it behind one auth/session adapter, and do not scatter SDK-specific session logic across routes. The compatibility spike must test sign-in, verified identity, cookie refresh/write behavior, expiry, logout, revocation, cache headers (`private, no-store` for authenticated responses), and protected route behavior. Validate entitlement independently on the server. Do not treat client auth state as authorization. |
 | Primary persistence | Supabase-managed PostgreSQL | Use versioned migrations, foreign keys, uniqueness constraints, transactions where needed, and row-level security on user-owned tables. Use user-scoped access for ordinary requests. A service-role credential is server-only and permitted only in trusted operations after explicit authorization or for narrowly scoped webhook/admin workflows. |
-| Purchase source | Gumroad v2 API; Ping as a sale-notification trigger where configured; scheduled/API-triggered reconciliation for current sale, refund, and dispute status | Do not assume distinct refund/dispute webhooks or signed Ping payloads. Corroborate notifications through documented server-to-Gumroad lookups, keep any seller API credential server-side, reconcile at least every 15 minutes, and apply the Stage 17 24-hour maximum stale-positive bound. Verify actual response fields, scopes, and notification behavior in the compatibility spike. |
-| Buyer activation credential | A unique Gumroad-generated per-sale license key, enabled for the exact product configuration | Configure Gumroad to issue the license key with the purchase receipt/download flow. Validate the key server-side against the expected product using the supported license verification API, then atomically bind it to one verified app account and retain only a secure verifier/reference needed by policy. The key is a bootstrap credential, not a session token; never place it in a URL or logs. If Gumroad license-key issuance or verification cannot satisfy this contract, STOP the paid activation implementation and resolve the integration design before feature coding—do not silently introduce an unselected transactional-email provider or weaker fallback. |
+| Purchase source | Manual owner review of the Gumroad/Selar storefront order record, outside the app | Record only purchase origin and minimal owner-reviewed reference; no provider API/webhook/reconciliation is implemented or assumed. Owner review is not described as automated provider verification. |
+| Buyer access decision | Owner-only approve/revoke/block action after manual purchase review | The server validates the configured owner principal, target account, state transition, and audit write. No buyer activation key, license API, or email automation is required. |
 | Discovery | Tavily REST adapter in trusted server-side code | Read `TAVILY_API_KEY` only from the Cloudflare Worker secret configuration. Never expose it to the browser or buyers. Preserve provider-vs-original-source provenance and Stage 16 typed failure outcomes. |
 | Marketplace opportunity access | Optional, independent Upwork and Fiverr adapters behind Stage 4's source interface; default disabled | Enable each only after documented authorization for the exact buyer-demand surface and commercial use. No scraping, unofficial endpoints, account/session-cookie reuse, or use of Tavily to bypass restrictions. Do not classify freelancer service listings or marketplace user profiles as client opportunities. If approved access is unavailable, label the capability `pending_approval`/`unavailable` and use only a reviewed direct-open/manual-review path where permitted. |
 | Secret/configuration storage | Cloudflare Worker secrets for runtime secrets; environment-specific configuration for non-secrets | Separate local, test/staging, and production values. No production secret in Git, client assets, source maps, fixtures, or routine logs. Provide only unmistakable placeholders in examples. |
@@ -645,20 +665,21 @@ The selected OpenNext path is deliberate, not an accidental use of an older defa
 
 Supabase's [server-side authentication guide](https://supabase.com/docs/guides/auth/server-side) currently identifies `@supabase/ssr` as beta/unstable. Stage 19 therefore requires exact version pinning, a single adapter boundary, explicit refresh/cookie/cache tests, and no dependency upgrade without the authentication and cross-user isolation regression suite. Do not scatter SDK-specific auth behavior through domain routes.
 
-Gumroad's official [customer purchase guidance](https://gumroad.com/help/article/282-how-do-purchases-work-for-my-customers.html) states that receipts include license keys when applicable, and its [sales dashboard guidance](https://gumroad.com/help/article/268-customer-dashboard) documents managing/disabling keys and tracking verification uses. Its [Ping guidance](https://gumroad.com/help/article/174-third-party-analytics) describes Ping in the context of post-sale notifications; no separate refund/dispute event or signature is assumed without verification. The implementation must enable keys for the actual product configuration and verify that the supported license API meets the contract; otherwise the paid activation path remains blocked rather than silently introducing another delivery provider. The Gumroad [customer dashboard guidance](https://gumroad.com/help/article/268-customer-dashboard) documents license-key use counts and disabling, so activation/reconciliation calls must explicitly avoid consuming a usage count during routine checks and must not treat Gumroad's counter as the application's atomic account-binding mechanism.
+**Purchase-provider scope:** Gumroad and Selar are used as storefronts for the first release. The configured owner checks the purchase record manually; the application does not call provider purchase/license APIs or consume provider webhooks. This avoids treating undocumented provider behavior as an access-control dependency. If automated verification is considered later, it requires a separately approved contract, documented provider capabilities, security review, and new compatibility evidence before implementation.
 
 ### Purchase and entitlement rules that are fixed for implementation
 
-1. A checkout return URL never grants access.
-2. A purchase notification is a trigger for verification, not proof by itself.
-3. The server validates the product, sale/license state, and relevant refund/dispute status through the trusted provider API before changing entitlement.
-4. Event processing is idempotent and safe under duplicate, delayed, reordered, and retried notifications.
-5. A license/activation key is never a substitute for an authenticated session. After activation, protected operations require both a valid session and current entitlement.
-6. Activation is bound atomically to one verified account. Lost-key recovery must verify purchase ownership without revealing whether another buyer or account exists.
-7. Refund, chargeback, dispute, revocation, and provider-unavailable behavior follow Stage 17's access policy and Stage 16's failure policy.
-8. A user-specific PIN is explicitly out of the first-release scope; no stage may quietly introduce it as an authorization shortcut.
-9. Gumroad Ping is only a trigger where supported; do not infer a refund/dispute event stream or event signature without current documented support. Validate license keys with non-incrementing checks (`increment_uses_count=false` where the endpoint supports it), use a trusted source-of-truth lookup for current sale/refund/dispute state, and keep app-level account binding in an atomic local entitlement/activation claim.
-10. Run entitlement reconciliation at least every 15 minutes. The normal revocation target is 15 minutes after a change is visible to the authoritative provider API; if provider verification remains unavailable, existing active entitlements may not rely on the last trusted status for more than 24 hours, after which protected access is suspended until reconciliation succeeds. New activations fail closed during verification outages.
+1. Registration and checkout redirects never grant protected access.
+2. New app accounts start in `PENDING` until the configured owner manually reviews the purchase record and approves the matching account.
+3. Only the configured owner can approve, revoke, or block. Actor identity and role are established server-side.
+4. Persist one canonical active-state value (`ACTIVE`) plus `PENDING`, `REVOKED`, and `BLOCKED`; keep UI label mapping separate.
+5. Every protected request checks current entitlement and resource ownership; no client-supplied role/status is trusted.
+6. Owner changes are atomic, concurrency-safe, idempotent where applicable, and auditable with minimal purchase metadata.
+7. Revocation/blocking is enforced on subsequent protected requests; an auth or entitlement-store outage fails closed.
+8. RLS prevents cross-user access, and owner actions cannot be called by customers.
+9. No automatic Gumroad/Selar API, license-key activation, purchase webhook, or recurring refund/dispute reconciliation is a first-release requirement.
+10. Do not add paid email automation or store full payment data.
+
 
 ### Mandatory pre-implementation spike
 
@@ -668,10 +689,10 @@ Before coding the full product, implement and test only the smallest proof of co
 - read a protected test record with user-scoped authorization and confirm a second test user receives `DENIED` with no data leakage;
 - connect to a non-production Supabase database with migrations and row-level security;
 - inject a dummy secret through Cloudflare's server-side secret mechanism and prove it is absent from browser assets/responses/logs;
-- verify a mocked Gumroad purchase/license-verification outcome and a mocked Tavily adapter response through the canonical contracts, including distinct `DENIED` versus `FAILED` outcomes;
-- in a controlled Gumroad test/configuration, verify exact product binding, valid/wrong-product/disabled/refunded/disputed status handling, documented Ping payload capabilities, non-incrementing license checks, and behavior when the Sales API is unavailable;
-- prove duplicate and concurrent activation attempts do not consume license uses unexpectedly or bind the same purchase to multiple accounts;
-- prove scheduled reconciliation, the 15-minute normal propagation target, and the 24-hour fail-closed stale-state bound without using real buyer records;
+- verify mocked owner approve/revoke/block actions and a mocked Tavily adapter response through the canonical contracts, including distinct `DENIED` versus `FAILED` outcomes;
+- verify owner-only access, no self-approval, pending/revoked/blocked enforcement, RLS, audit integrity, concurrent/duplicate owner actions, and fail-closed behavior using synthetic users in a non-production environment;
+- prove duplicate and concurrent entitlement changes cannot bypass authorization or corrupt account bindings;
+- prove revocation/blocking is enforced on the next protected request and entitlement-store outages fail closed;
 - run automated type-check, unit/contract tests, and a production build.
 
 **Stop/go rule:** if the spike cannot demonstrate server-authoritative sessions, data isolation, and server-only secret handling, do not build downstream features on top of it. Record and approve a stack adjustment first.

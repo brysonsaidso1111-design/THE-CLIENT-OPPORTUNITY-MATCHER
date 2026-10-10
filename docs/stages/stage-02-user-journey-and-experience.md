@@ -7,6 +7,15 @@
 **Branch:** main  
 **Status:** STAGE 2 — COMPLETED (ARCHITECTURE CONSOLIDATED)
 
+## Owner-approved first-release access journey — authoritative override
+
+This section supersedes conflicting earlier wording about activation keys or automatic provider verification. For the first release: a Gumroad/Selar buyer registers or signs in, receives **PENDING** access, and waits while the configured owner independently checks the purchase record and approves the matching app account. Registration, a redirect, a buyer-provided email, and client-side flags never grant protected access.
+
+The journey must provide clear **PENDING**, **APPROVED**, **REVOKED**, **BLOCKED**, and sign-in-required states. Only the configured owner can approve, revoke, or block through a protected owner-only action. Protected operations must enforce the current server-side entitlement. Revocation/blocking applies to subsequent protected requests. The UI must not expose admin controls or another user's purchase/account information. No paid email automation is required. Automatic Gumroad/Selar API, license-key, webhook, or recurring reconciliation is not part of this first release.
+
+Stage ownership remains: Stage 2 owns user-facing journey and states; Stage 3 owns canonical entitlement data; Stage 16 owns denial/failure semantics; Stage 17 owns security/privacy; Stage 19 implements persistence/runtime enforcement; Stage 20 independently verifies the integrated behavior.
+
+
 ---
 
 ## 1. Purpose
@@ -59,11 +68,11 @@ The product provides decision intelligence before the user acts. The user remain
 
 The complete access-to-product journey is:
 
-**Gumroad Purchase → Quickstart PDF + App Link + Unique Buyer Activation Key → Activation → Server-Side Entitlement Validation → Authorized Session → Welcome → Brief → Optional Preferences → Opportunity Hunt → Results → Opportunity Intelligence → User Decision → Action → Management / Feedback → Future Personalization.**
+**Gumroad/Selar purchase → app registration/sign-in → PENDING → owner manually checks purchase record → owner approves → server-side entitlement check → authorized session → Welcome → Brief → Optional Preferences → Opportunity Hunt → Results → Opportunity Intelligence → User Decision → Action → Management / Feedback → Future Personalization.**
 
 A returning buyer with a valid authorized session may proceed directly to Welcome. The quickstart PDF helps the buyer get started; it does not grant access. Possession of the app URL alone must never bypass server-side entitlement checks.
 
-The Peer Lead Network is an ecosystem pathway available from relevant product contexts, but it remains separate from the matching engine. The activation/authorization mechanism is owned by Stage 17, and purchase verification, entitlement synchronization, session integration, and production enforcement are owned by Stage 19.
+The Peer Lead Network is an ecosystem pathway available from relevant product contexts, but it remains separate from the matching engine. Stage 17 owns authorization/security semantics; Stage 19 implements persistence and server-side enforcement for owner-reviewed manual approval. Automatic provider purchase verification is not in first-release scope.
 
 ---
 
@@ -91,15 +100,15 @@ The Peer Lead Network is an ecosystem pathway available from relevant product co
 **Purpose:** Establish whether the visitor is entitled to enter the protected application before showing buyer-only product content.
 
 The access journey must support:
-- a buyer receiving the quickstart PDF, app link, and unique activation key after a valid Gumroad purchase;
-- an activation screen that accepts the buyer's activation credential without exposing whether another buyer's credential is valid;
-- server-side validation of entitlement and activation state before an authorized session is granted;
+- a buyer creating an app account after a Gumroad or Selar purchase and seeing PENDING until the owner reviews and approves the matching purchase;
+- a clear pending-access screen that explains owner review is required without revealing another buyer's account or purchase details;
+- server-side validation of current entitlement and owner authorization before protected access is granted;
 - a clear successful activation/continue path;
-- clear denied states for invalid, already-used where applicable, revoked, refunded, or non-entitled credentials;
+- clear denied states for pending, revoked, blocked, and otherwise non-entitled accounts;
 - a truthful temporary-unavailable state when entitlement verification cannot be completed;
 - a returning authorized buyer entering through a valid session without unnecessary repeated activation.
 
-The app URL and PDF are not access controls. Do not store activation keys in browser-readable configuration or treat client-side checks as authorization. Stage 17 defines credential, session, authorization, privacy, and revocation policy; Stage 19 integrates Gumroad and production enforcement. Stage 2 owns only the user-facing journey and states.
+The app URL and PDF are not access controls. Do not store activation keys in browser-readable configuration or treat client-side checks as authorization. Stage 17 defines session, authorization, privacy, owner controls, and revocation policy; Stage 19 integrates persistence and server-side enforcement for manual approval. Stage 2 owns only the user-facing journey and states.
 
 ### 5.1 Welcome
 
@@ -354,7 +363,7 @@ The user should be able to understand the relevant tradeoff.
 - ranking weights
 - scoring formulas
 - technical application implementation
-- authentication, entitlement validation, activation-key generation/storage, session enforcement, Gumroad event verification, and Tavily API execution
+- authentication, entitlement validation, owner-only approval actions, session enforcement, and Tavily API execution
 
 Those responsibilities belong to later stages. Stage 17 owns security/privacy/trust controls; Stage 19 owns production purchase/access/provider integration.
 
