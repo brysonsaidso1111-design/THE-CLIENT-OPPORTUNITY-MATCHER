@@ -1,0 +1,53 @@
+name: Stage 19 Next.js and OpenNext compatibility spike
+
+on:
+  pull_request:
+    paths:
+      - "app/**"
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "next.config.ts"
+      - "open-next.config.ts"
+      - "wrangler.jsonc"
+      - "tsconfig.json"
+      - ".github/workflows/stage-19-next-opennext-spike.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage-19-next-opennext-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compatibility:
+    name: Pinned dependency install, typecheck, tests, Next and Worker builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.20.0"
+      - name: Generate lockfile from exact top-level pins
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Clean reproducible install from generated lockfile
+        run: npm ci
+      - name: Typecheck and contract tests
+        run: npm run check
+      - name: Next.js production build
+        run: npm run build
+      - name: OpenNext Cloudflare Worker build
+        run: npm run build:worker
+      - name: Upload generated lockfile for review and commit
+        if: always() && hashFiles('package-lock.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage-19-stack-lockfile
+          path: package-lock.json
+          if-no-files-found: error
+          retention-days: 7
