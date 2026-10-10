@@ -6,7 +6,7 @@ This is the common verification contract for all 20 stage handoffs. Detailed sta
 
 - Contract harness run [#38093307938](https://github.com/brysonsaidso1111-design/THE-CLIENT-OPPORTUNITY-MATCHER/actions/runs/38093307938): syntax check passed; 20 contract tests passed, 0 failed, 0 skipped, on tested implementation commit `27124072e28f56e879f4f217e66f04c1db65c357`.
 - Framework spike run [#38093572120](https://github.com/brysonsaidso1111-design/THE-CLIENT-OPPORTUNITY-MATCHER/actions/runs/38093572120): lockfile generation, clean install, typecheck/contract tests, Next.js production build, and OpenNext Worker build all passed on candidate commit `f6006829384d224063cff3da67a9c5cac3f512e5`.
-- The generated lockfile contains 472 package entries (lockfile v3), SHA-256 `4dff7d38cdf4c3dea11316a0a09427c2542695e2854a866e66cf801a50c2d398`. It must be committed and tested from the repository checkout before reproducible dependency closure is marked verified.
+- The generated lockfile contains 472 package entries (lockfile v3), SHA-256 `4dff7d38cdf4c3dea11316a0a09427c2542695e2854a866e66cf801a50c2d398`. It was committed at `0f6ba499483df918c3fe8bed1cfdcae3206bea66`; a fresh workflow run against the committed checkout is required before reproducible dependency closure is marked verified.
 - Not covered: real Supabase session lifecycle, migrations/RLS/two-user isolation, runtime secret leakage, live Tavily, owner-dashboard persistence/audit, end-to-end browser/security tests. These remain explicit blockers.
 
 ## Environment tiers

@@ -35,3 +35,15 @@ These are exact direct-dependency pins, not yet a committed transitive lock. The
 5. `npm run build:worker` succeeds with the selected OpenNext/Wrangler path.
 6. Generated package-lock is reviewed, committed, and a fresh clean install succeeds.
 7. This does not prove Supabase session lifecycle, PostgreSQL migrations/RLS, secret leakage, or live Tavily connectivity. Those remain separate non-waivable gates.
+
+
+## Actual hosted result — 2026-10-10
+
+- Successful workflow run: [#38093896644](https://github.com/brysonsaidso1111-design/THE-CLIENT-OPPORTUNITY-MATCHER/actions/runs/38093896644), tested candidate commit `e5eb883f5d2760e778380ebb1e2dd110a8c829b4`.
+- Passed: generated lock, clean `npm ci`, TypeScript check, contract tests, Next.js production build, OpenNext Worker build.
+- The lockfile was committed by the successful workflow as `0f6ba499483df918c3fe8bed1cfdcae3206bea66`. Lockfile v3 contains 472 package entries; SHA-256: `4dff7d38cdf4c3dea11316a0a09427c2542695e2854a866e66cf801a50c2d398`.
+- A fresh workflow run against the branch containing the committed lockfile is still required before marking the lockfile gate VERIFIED.
+
+## Stack decision note
+
+Current Cloudflare guidance recommends vinext for new Next.js projects and documents OpenNext as a supported path for existing OpenNext apps. The approved project contract remains Next.js + OpenNext; this spike proves that the pinned OpenNext path builds. Do not silently switch to vinext. If a later compatibility/security issue materially favors changing the approved adapter, document the evidence and request an explicit architecture decision.
