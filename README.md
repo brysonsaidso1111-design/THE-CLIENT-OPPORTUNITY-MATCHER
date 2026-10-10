@@ -44,6 +44,10 @@ This repository currently contains the **20-stage architecture specifications** 
 
 Stage-specific GitHub handoff issues are **#1–#12 and #14–#21**. Issue **#13** is the separate cross-stage audit, not Stage 13. The separate Sources-page implementation issue is **#23**.
 
+## Implementation baseline and defect register
+
+The current inventory and open implementation/verification blockers are tracked in [the implementation baseline and defect register](docs/implementation/implementation-baseline-and-defect-register.md). Update it with evidence as artifacts are added; do not record absent files with invented paths or line numbers.
+
 ## Evidence and defect reporting
 
 Use explicit status labels in audit reports:
