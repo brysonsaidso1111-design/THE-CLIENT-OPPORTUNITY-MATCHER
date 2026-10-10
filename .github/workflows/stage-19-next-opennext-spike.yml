@@ -28,9 +28,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.head_ref || github.ref_name }}
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "22.20.0"
       - name: Generate lockfile from exact top-level pins
@@ -57,7 +60,7 @@ jobs:
           fi
       - name: Upload generated lockfile evidence
         if: always() && hashFiles('package-lock.json') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: stage-19-stack-lockfile
           path: package-lock.json
