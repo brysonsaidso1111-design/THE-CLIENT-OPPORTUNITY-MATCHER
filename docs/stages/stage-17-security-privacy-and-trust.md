@@ -9,6 +9,24 @@
 **Next stage:** Stage 18 — Analytics, Observability & Quality  
 **Status:** STAGE 17 — ARCHITECTURE CONSOLIDATED; IMPLEMENTATION, SECURITY TESTS, AND PRODUCTION READINESS NOT CLAIMED
 
+## Owner-approved first-release security and entitlement contract — authoritative override
+
+This section supersedes conflicting earlier wording about automatic purchase activation, unique activation keys as the access grant, provider webhooks, or recurring purchase reconciliation. For the first release, the configured owner manually checks the Gumroad/Selar purchase record and approves the matching authenticated app account. The app does not assume any automatic purchase-provider API, webhook, license-key activation, or recurring reconciliation.
+
+**Required security controls**
+- New registrations start as `PENDING`; authentication is not entitlement. Protected operations deny `PENDING`, `REVOKED`, and `BLOCKED` accounts.
+- Only a single configured owner identity/allowlist can access the owner dashboard and invoke approve/revoke/block. The owner identity must be configured securely server-side, never accepted from a request field or client role.
+- Each owner action authenticates the actor, validates the target and state transition, writes the entitlement change atomically, and records a privacy-minimized audit event (actor, target, prior/new state, time, action, minimal reason/reference). Protect against CSRF where applicable, replay, duplicate actions, abuse, and concurrent updates.
+- No user can approve themselves, change their role, or submit a client-side entitlement flag as authority. Hiding controls in the UI is not authorization.
+- Every protected server/API operation checks the authenticated principal, current server-side entitlement, and resource ownership. Re-check on subsequent requests so revocation/blocking takes effect without relying on stale client/session flags. Use private/no-store caching for authenticated/entitlement-dependent responses.
+- Enforce RLS and least privilege; test two-user isolation. Service-role/database secrets remain server-only. Never log secrets, raw payment data, full purchase payloads, session tokens, or unnecessary personal data.
+- If authentication, owner identity, entitlement state, or ownership cannot be established, fail closed. Preserve Stage 16 semantics: policy denial is `DENIED + denial_code`; technical inability is `FAILED + failure_code` internally, without leaking sensitive diagnostics.
+- A manual purchase check is a human decision recorded by the owner, not proof that a provider API/webhook was integrated. Refund/dispute review and revocation may be performed manually in the first release. No paid email automation is required.
+- Stage 19 implements the approved flow; Stage 20 must independently exercise self-approval, forged roles, unauthorized owner actions, cross-user access, pending/revoked/blocked access, revocation propagation, audit integrity, and fail-closed outage behavior.
+
+Canonical entitlement state labels must be defined by Stage 3 and used consistently. Do not maintain `APPROVED` and `ACTIVE` as conflicting persisted states; choose one canonical active value.
+
+
 ---
 
 ## 1. Purpose and critical boundary
@@ -21,7 +39,7 @@ The governing rule is:
 
 The product is buyer-only. A public URL, the quickstart PDF, a browser-side flag, a hidden screen, a locally stored PIN, or knowledge of an app route is not proof of purchase. Access is authorized by a server-controlled entitlement record and an authenticated session or equivalent server-verified request context.
 
-Stage 17 owns security semantics and required controls. It does not claim to implement a production authentication system or payment verification. Stage 19 implements the Gumroad, activation, session, data-store, hosting, and provider integrations. Stage 20 verifies those implementations with adversarial tests and evidence.
+Stage 17 owns security semantics and required controls. It does not claim to implement a production authentication system or payment verification. Stage 19 implements persistence, session integration, and server-side enforcement for the manual purchase-review flow. Automatic purchase-provider verification is not required for the first release. Stage 20 verifies those implementations with adversarial tests and evidence.
 
 Stage 17 does not own:
 - opportunity lifecycle transitions (Stage 15);
@@ -36,31 +54,30 @@ Stage 17 does not own:
 
 ### Question 1: How does the system establish that a user is entitled to use the paid app?
 
-**Decision: D — Server-verified, revocable entitlement with a unique activation credential and an authenticated session.**
+**Decision: D — Owner-reviewed, server-enforced, revocable entitlement bound to an authenticated account, with owner-only approve/revoke/block controls.**
 
 The required customer journey is:
 
-**Gumroad purchase → delivery of quickstart PDF and app link → unique activation credential → activation against the server → entitlement validation → authenticated, authorized app session.**
+**Gumroad/Selar purchase → app registration → PENDING entitlement → owner checks purchase record → owner approves account → server checks current entitlement → authorized session.**
 
-The quickstart PDF and app URL are onboarding conveniences, not access controls. A buyer activation credential is a bootstrap credential used to claim or activate the purchase; it is not the same as the Tavily API key, a permanent shared app password, or a user-created convenience PIN.
+The quickstart PDF and app URL are onboarding conveniences, not access controls. The first release does not use a buyer activation credential; the configured owner manually reviews the purchase record and changes the app account's entitlement.
 
 The server must maintain an authoritative entitlement record with, at minimum:
 - a stable internal entitlement identifier;
 - a trusted purchase/provider reference when available;
 - product/SKU identifier and entitlement scope;
-- status such as pending, active, suspended, revoked, refunded, disputed, or expired where applicable;
-- activation status and activation timestamp;
-- association with the account or identity that claimed it;
-- created/updated timestamps and an auditable reason/source for status changes;
-- only a cryptographic hash or equivalent non-reversible verifier for an activation secret when the credential must be retained for later verification.
+- one canonical state: `PENDING`, `ACTIVE` (the single persisted approved-state value), `REVOKED`, or `BLOCKED`;
+- association with the authenticated app user and purchase origin (`Gumroad` or `Selar`);
+- minimal owner-reviewed purchase reference, review/decision timestamps, decision actor, and created/updated timestamps;
+- auditable, privacy-minimized reason/source for each status change; no activation secret or full payment payload is required.
 
-Never trust a status, purchase amount, email address, or entitlement claim supplied only by browser code. The server must validate the claim against a trusted record or a properly authenticated purchase-verification mechanism. The exact Gumroad API/webhook flow and verification of webhook authenticity are Stage 19 implementation decisions constrained by this contract.
+Never trust a status, purchase amount, email address, or entitlement claim supplied only by browser code. For the first release, the configured owner records a manual review of a Gumroad or Selar order before changing entitlement. The app stores only minimal review metadata and enforces the resulting entitlement server-side. Automatic provider APIs/webhooks are out of scope unless separately approved.
 
-Activation credentials must be unique, sufficiently unpredictable, scoped to the intended product/entitlement, single-use where practical, time-limited where feasible, rate-limited, and revocable. Do not use sequential identifiers or weak, guessable codes. Store only a secure verifier/hash for credentials where possible; do not store recoverable plaintext activation secrets in application tables or logs. Deliver a newly generated secret only through the intended secure delivery channel and do not display it again casually after activation.
+Owner approval must be restricted to the configured owner identity, protected server-side, validated, rate-limited where feasible, auditable, and revocable. No buyer activation secret is issued or stored for this first-release flow.
 
-Activation must be atomic: concurrent attempts cannot claim the same single-use credential twice or attach one entitlement to multiple accounts. If the system cannot confirm entitlement safely, it must not grant protected access. Stage 16 governs how that verification outage is reported without leaking internals.
+Entitlement mutations must be atomic and concurrency-safe: duplicate owner actions cannot corrupt state, one user's entitlement cannot attach to another account, and users cannot change their own status or role. If the system cannot confirm entitlement safely, it must not grant protected access. Stage 16 governs how that verification outage is reported without leaking internals.
 
-Refund, chargeback, dispute, manual support intervention, duplicate purchase, lost credential, and account recovery behavior must have explicit state-transition and reconciliation rules. Revocation must affect future authorization promptly and invalidate or re-check existing sessions according to the risk policy. Stage 19 must not assume a Gumroad event is authentic solely because it arrives at a public URL.
+Owner review, duplicate purchase references, manual support intervention, account recovery, revocation, and blocking must have explicit state-transition and audit rules. Refund/dispute reconciliation is not automated in the first release; the owner may manually revoke after checking the storefront record. Revocation must affect future authorization promptly and invalidate or re-check existing sessions according to the risk policy. Stage 19 must not assume a Gumroad event is authentic solely because it arrives at a public URL.
 
 ### Question 2: What credential and secret types exist, and where may each be used?
 
@@ -69,9 +86,9 @@ Refund, chargeback, dispute, manual support intervention, duplicate purchase, lo
 | Credential / secret | Purpose | Permitted location | Must never appear in |
 |---|---|---|---|
 | Tavily API key | Platform-owned discovery infrastructure | Server-side deployment secret manager/environment | Browser JS, HTML, client responses, Git, screenshots, buyer forms, URLs, routine logs |
-| Gumroad integration credential | Server-to-provider purchase/entitlement verification | Server-side secret store, restricted integration runtime | Browser, user-visible errors, public repo, unredacted logs |
+| Owner identity/allowlist configuration | Identify the only principal allowed to approve/revoke/block entitlement | Server-side protected configuration and authorization policy | Browser, user-editable profile fields, public repo, unredacted logs |
 | Webhook signing/verification secret, if used | Authenticate provider event delivery | Server-side secret store and verification code | Browser, URL, event payload logs, public docs |
-| Buyer activation credential | Bootstrap an entitlement claim | One-time delivery; transient submission over TLS; secure verifier on server | Tavily configuration, analytics, plaintext database, URLs, support tickets, logs |
+| Owner entitlement decision | Grant/revoke/block product access after manual purchase review | Protected owner-only server action; minimal durable audit record | Client-supplied roles/status, browser flags, public logs, unredacted purchase payloads |
 | Session cookie/token | Identify an authenticated session | Secure cookie or carefully scoped server-side token mechanism | URLs, analytics, logs, other users' browsers or records |
 | Optional user PIN | Convenience or step-up interaction only, if justified | Protected verification flow with appropriate hashing/rate limits | Platform secret store as a shared access key, cross-user lookup, logs |
 | Password/reset/recovery token, if implemented | Authentication/account recovery | Secure verifier and time-limited one-use flow | Logs, URLs beyond necessary short-lived delivery, analytics |
@@ -126,7 +143,7 @@ Minimum controls:
 - Keep product data, entitlement records, provider secrets, and operational telemetry logically separated, with separate access controls and retention where appropriate.
 - Treat external opportunity content as untrusted input. It may contain malicious instructions, tracking, deceptive claims, or prompt-injection attempts; it must not be allowed to override system policy, trigger privileged actions, or change access control.
 
-The app should avoid sending unnecessary user profile details to Tavily or other search providers. Construct provider queries using the minimum fields needed for discovery, and do not include activation credentials, session identifiers, private user notes, or sensitive profile data. Provider requests must be scoped to discovery, not entitlement validation.
+The app should avoid sending unnecessary user profile details to Tavily or other search providers. Construct provider queries using the minimum fields needed for discovery, and do not include authentication secrets, session identifiers, private user notes, or sensitive profile data. Provider requests must be scoped to discovery, not entitlement validation.
 
 Privacy and legal compliance must be reviewed for the actual deployment jurisdictions and data flows before launch; this architecture is not a claim of legal certification or regulatory compliance.
 
@@ -139,14 +156,14 @@ Before implementation, Stage 19 must turn the rules into concrete controls. Stag
 Threat scenarios and mandatory tests:
 1. A non-buyer opens the app URL directly and calls protected APIs; access is denied.
 2. A buyer shares the PDF or app URL without sharing an authorized credential; the recipient cannot gain access.
-3. An invalid, guessed, expired, reused, revoked, refunded, or otherwise ineligible activation credential cannot create an authorized session.
-4. Two concurrent activation requests cannot claim the same single-use credential twice.
+3. A pending, revoked, or blocked account cannot access protected routes or APIs; a purchase redirect or client-supplied entitlement cannot grant access.
+4. Two concurrent owner actions cannot corrupt or bypass entitlement state; ordinary users cannot call owner-only actions.
 5. A client forges `is_paid=true`, an owner ID, an entitlement status, or a role; server authorization remains unchanged.
 6. Buyer A changes an object ID in a request to reference Buyer B's hunt, opportunity, evidence, feedback, or decision; no private data is disclosed or modified.
 7. A user with an expired/revoked entitlement cannot continue protected operations beyond the explicitly approved revocation window.
 8. Tavily and Gumroad credentials are absent from built frontend assets, browser network responses, public repository content, client errors, URLs, and routine logs.
 9. Missing or invalid platform secrets fail safely and do not grant access or prompt buyers to supply infrastructure credentials.
-10. Forged or replayed purchase webhooks do not create, reactivate, or extend entitlements.
+10. Ordinary users cannot forge or replay owner actions to create, reactivate, or extend entitlements.
 11. Session fixation, CSRF, direct API calls, unsafe CORS, and basic XSS attempts are tested against the selected architecture.
 12. Activation, login, recovery, and expensive discovery endpoints resist brute force and abuse within defined limits.
 13. Logout, credential rotation, revocation, and account recovery invalidate or constrain old sessions as specified.
@@ -166,8 +183,8 @@ Architecture review, code review, automated test pass, external security assessm
 
 ### Protected assets
 - Tavily API key and any other discovery-provider credentials.
-- Gumroad integration credentials and webhook verification material.
-- Buyer activation credentials, account identity, session state, and entitlement status.
+- The configured owner identity/allowlist and owner-action authorization policy; no Gumroad integration credential or purchase webhook secret is required for the manual first-release path.
+- Account identity, session state, entitlement status, and privacy-minimized owner decision audit.
 - User profiles, search intents/hunts, saved opportunities, evidence notes, decisions, lifecycle records, and feedback.
 - Private operational logs, support records, and security events.
 - Source and evidence lineage where private user activity could be inferred.
@@ -175,7 +192,7 @@ Architecture review, code review, automated test pass, external security assessm
 ### Trust boundaries
 1. **Browser ↔ application server:** treat all browser inputs and client-side state as untrusted.
 2. **Application server ↔ database:** use least-privileged credentials and enforce owner scoping.
-3. **Application server ↔ Gumroad:** treat inbound notifications as untrusted hints until corroborated by an authoritative server-to-Gumroad lookup; validate product, sale/license identity, and current status before changing entitlement. Verify a webhook signature only if the current Gumroad event type and configured endpoint explicitly support a documented signature. Do not assume Gumroad Ping is signed or that it delivers refund/dispute events; Stage 19 owns verification of actual provider capabilities and the reconciliation implementation. If the trusted API lookup fails because of timeout or outage, preserve the entitlement state and report a Stage 16 technical failure; use `UNTRUSTED_EVENT` only when the event itself is shown to be untrusted.
+3. **Owner ↔ app server:** the owner manually checks the Gumroad/Selar storefront record out of band, then uses a protected owner-only action to approve, revoke, or block the matching app account. The app does not call Gumroad/Selar purchase APIs or accept purchase webhooks in the first release. Record only minimal review metadata; validate actor, target account, state transition, and audit event server-side.
 4. **Application server ↔ Tavily:** send only necessary discovery queries; protect the API key; treat returned content and metadata as untrusted.
 5. **Application server ↔ other source/publisher websites:** treat page content as untrusted and preserve source provenance.
 6. **Application server ↔ observability/logging services:** redact secrets and minimize personal data.
@@ -189,38 +206,35 @@ No trust boundary is removed because a component belongs to the same repository 
 ## 4. Buyer-only access contract
 
 ### Required sequence
-1. Purchase occurs through Gumroad or another explicitly approved sales channel.
-2. The purchase provider or a trusted server-side reconciliation process establishes a verified entitlement record.
-3. The buyer receives the intended quickstart PDF and app link, plus a unique activation credential or secure activation path.
-4. The buyer submits the activation credential through HTTPS to the app's server.
-5. The server validates the credential, verifies the entitlement is eligible and unclaimed/claimable, atomically binds the entitlement to the account/session identity, and marks the credential consumed when applicable.
-6. The server creates or establishes an authenticated session.
-7. Each protected request is authenticated and authorized against the current session, entitlement, ownership, and action.
-8. Refund, chargeback, dispute, expiry, revocation, or suspected compromise triggers the defined entitlement/session policy.
-9. Support and recovery paths must not bypass entitlement verification; they must create an auditable, narrowly scoped change.
+
+1. The buyer purchases through Gumroad or Selar and creates/signs into an app account.
+2. The app creates the entitlement record in `PENDING`; registration and checkout redirects never grant protected access.
+3. The configured owner independently checks the storefront order record and matches it to the app account.
+4. The owner invokes a protected approve action. The server validates the authenticated owner identity, target account, permitted state transition, and audit write atomically.
+5. The durable entitlement becomes `ACTIVE`; the app records purchase origin, minimal reviewed reference, decision actor/time, and privacy-minimized reason.
+6. The app establishes or maintains the authenticated session. Every protected request checks current entitlement and resource ownership.
+7. Only the owner may later revoke or block the account; subsequent protected requests deny access.
+8. Refund/dispute status is not automatically synchronized in the first release. The owner may manually revoke after checking the storefront.
+9. Owner/support recovery must not bypass entitlement, reveal another user's purchase details, or permit a customer to self-approve.
 
 ### Initial-release entitlement freshness and revocation policy
 
-For the first release, the following values are explicit defaults, not implicit assumptions:
-
-- **Protected-request check:** every protected server request must check the current local entitlement state and ownership, not merely the existence of an authenticated session or a client-side claim.
-- **Reconciliation cadence:** Stage 19 must reconcile active entitlements and relevant purchase status at least every 15 minutes, using a trusted server-side Gumroad lookup. A trusted provider notification may trigger an earlier reconciliation but does not replace it.
-- **Normal revocation target:** once Gumroad's authoritative API exposes a refund, dispute, disablement, or revocation, the local entitlement must be updated within 15 minutes under normal provider availability; once recorded locally, the next protected request must enforce it and existing sessions must be invalidated or re-authorized according to policy.
-- **Provider-outage bound:** new activations fail closed immediately if purchase verification cannot be established. Existing entitlements may rely on the last successfully reconciled local state for at most 24 hours from the last successful authoritative status check. If that freshness bound expires, protected access is suspended until reconciliation succeeds; the user must see a service-availability message, not be told their purchase is invalid.
-- **No silent relaxation:** if the compatibility spike proves that the selected Gumroad API/account configuration cannot support the required status checks and reconciliation cadence, stop the paid-access implementation and revisit the integration decision explicitly. Do not silently extend the 24-hour bound or grant access from an unverified notification.
-
-Stage 19 implements these limits and Stage 20 verifies them with deterministic tests and a controlled integration check. A confirmed revocation is applied immediately; the 24-hour bound applies only when the provider's current state cannot be obtained.
+- **Protected-request check:** every protected server request checks the current local entitlement state, authenticated principal, and resource ownership.
+- **Owner decision freshness:** entitlement state is changed only by a validated owner-only action. The subsequent protected request must enforce the latest durable state; do not rely on client caches or stale session claims.
+- **Revocation/block propagation:** once the owner records a revocation or block, subsequent protected server requests deny access. Existing sessions must re-check entitlement on protected operations; session existence alone is insufficient.
+- **Store outage:** if authentication or the entitlement store cannot establish current authorization, fail closed for the protected operation and return the correct Stage 16 technical outcome internally. Do not mislabel infrastructure failure as an invalid purchase.
+- **Manual review boundary:** the owner is responsible for checking current purchase status in the relevant storefront. Refund/dispute review is not automatically synchronized in the first release; the owner can manually revoke after review. Do not claim a provider-driven freshness/reconciliation SLA.
+- **No silent relaxation:** if a future automatic integration is proposed, it requires an explicit product/architecture decision and a separate update to the owning contracts before implementation.
 
 ### Failure and edge-case rules
-- A public app link is not an entitlement.
-- A successful Gumroad checkout redirect alone is not sufficient proof unless verified server-side against trusted purchase data.
-- A valid activation code alone is not enough if its entitlement is revoked, refunded, expired, mismatched, or already claimed contrary to policy.
-- The same activation code cannot activate multiple accounts concurrently.
-- Lost-code recovery must verify purchase/account ownership without disclosing whether another buyer's entitlement exists.
-- Provider outage or verification uncertainty must fail closed for new protected access and follow Stage 16's safe error contract.
-- Revocation checks must have a defined maximum propagation window; Stage 19 must implement and Stage 20 must test it.
-- Avoid locking legitimate buyers out permanently after a typo or transient outage; use rate limits, clear recovery paths, and safe retries without weakening authorization.
-- Support-issued manual grants must be exceptional, attributable, time-bounded where appropriate, and audited.
+- A public app link, PDF, registration, or successful checkout redirect is not entitlement.
+- Pending accounts remain denied until owner approval is durably recorded.
+- Revoked and blocked accounts remain denied on subsequent protected requests.
+- Owner identity, authorization, state transition, and audit record must be validated atomically.
+- Owner actions must not expose another user's purchase/account details and must not allow self-approval through customer-facing endpoints.
+- A database/auth outage fails closed according to Stage 16; do not treat it as a negative purchase verdict.
+- Avoid permanently locking out legitimate buyers after a temporary outage; show safe retry/support guidance without weakening authorization.
+- Any exceptional support grant must be explicitly owner-authorized, attributable, scoped, and audited.
 
 ### Stage 16 operational-failure mapping for protected access
 
@@ -230,11 +244,11 @@ Security decisions remain owned by Stage 17; the operational failure codes and r
 |---|---|---|---|
 | Required authentication, signing, or entitlement-verification configuration is absent | `CONFIGURATION_MISSING` | Fail closed for the protected operation | Return a generic service-unavailable response to the buyer; alert authorized operators through redacted telemetry; do not ask the buyer for a platform secret |
 | Session, entitlement store, or trusted verification dependency times out or is unavailable | `TIMEOUT` or `DEPENDENCY_UNAVAILABLE` | Do not grant new access or perform a protected mutation when authorization cannot be established | Preserve the distinction between service unavailability and invalid entitlement internally; permit retry only under Stage 16's bounded policy |
-| Activation credential is invalid, expired, already consumed, or mismatched | `DENIED` with `denial_code=INVALID_CREDENTIAL` or `ENTITLEMENT_INACTIVE` as appropriate | Deny activation | Use a non-enumerating buyer-facing response; do not reveal whether another buyer, purchase, or entitlement exists |
-| Activation or entitlement write fails or has an uncertain outcome | `PERSISTENCE_FAILED` | Do not issue a success response or authorized session until the entitlement claim is durable and atomic | Roll back where possible; otherwise perform an idempotent read-after-write/reconciliation before retrying |
+| Account is pending, revoked, or blocked | `DENIED` with the applicable Stage 16 `denial_code` | Deny protected access | Explain pending review or unavailable access without revealing another user's purchase details |
+| Owner entitlement mutation fails or has an uncertain outcome | `FAILED` with the appropriate Stage 16 `failure_code` | Do not report approval/revocation/block as complete until the state is durably confirmed | Read back authoritative state before retrying; use idempotency and audit consistency |
 | Activation/login/recovery attempts exceed an abuse threshold | `DENIED` with `denial_code=ABUSE_LIMITED` | Deny or defer the current attempt without weakening identity or entitlement checks | Apply bounded cooldown and safe retry guidance; do not count expected abuse throttling as a provider outage |
-| A notification is malformed, unauthenticated where a documented signature is supported, or cannot be corroborated as a purchase/status change | If the event itself is untrusted: `DENIED` with `denial_code=UNTRUSTED_EVENT`; if the trusted lookup is unavailable: `FAILED` with the Stage 16 `failure_code` | Do not grant or revoke entitlement from the notification alone | Record a redacted security event for a demonstrably untrusted event; retry/reconcile a timeout or provider outage under Stage 16. Reserve `VALIDATION_FAILED` for a technical contract violation, not an ordinary untrusted event or unavailable provider |
-| Refund/revocation status cannot be reconciled within the approved freshness/revocation window | Appropriate Stage 16 dependency/persistence failure | Do not silently extend access beyond the approved policy window | Re-check authoritative entitlement state; follow the documented conservative access policy and record the unresolved state |
+| An ordinary user attempts an owner-only entitlement action | `DENIED` with `denial_code=POLICY_BLOCKED` or the precise Stage 16 denial code | Do not change entitlement | Record a redacted audit/security event; do not reveal owner identity or sensitive diagnostics |
+| The entitlement store or authenticated owner state cannot be read | `FAILED` with the appropriate Stage 16 `failure_code` | Fail closed for protected operations | Retry only under Stage 16's bounded policy; do not change entitlement state on uncertainty |
 | Tavily or another discovery provider fails after the buyer is already authorized | Stage 16's provider-specific failure code | Keep entitlement decisions independent from discovery health | Degrade discovery only; do not revoke the buyer's session, fabricate an empty result, or present provider failure as evidence that no opportunities exist |
 
 **Outcome mapping invariant:** a correctly refused protected request is `DENIED` with a `denial_code`; an inability to determine authorization because a trusted service is unavailable is `FAILED` with the appropriate `failure_code` and must fail closed. Do not collapse an invalid buyer credential into a service outage or count a routine denial as a technical failure.
@@ -378,11 +392,11 @@ Stage 17 owns security and privacy requirements. It does not redefine the meanin
 ## 11. Required acceptance criteria
 
 - [ ] Entitlement is authoritative on the server and cannot be granted by browser flags or a purchase redirect alone.
-- [ ] Purchase events are authenticated, validated, deduplicated, and reconciled idempotently.
-- [ ] Activation credentials are unique, sufficiently unpredictable, scoped, rate-limited, and consumed/revoked according to policy.
+- [ ] Manual owner purchase review is recorded with minimal metadata; no provider event is trusted or required in the first release.
+- [ ] Owner approve/revoke/block actions are server-authorized, atomic, auditable, and unavailable to ordinary users.
 - [ ] Concurrent activation cannot claim one entitlement twice.
-- [ ] Tavily, Gumroad, webhook, and other platform secrets remain server-side.
-- [ ] Buyer activation credentials, sessions, provider credentials, and optional PINs are separate credential classes.
+- [ ] Tavily and database secrets remain server-side; the manual first-release flow does not require Gumroad API or purchase-webhook secrets.
+- [ ] Authenticated sessions and provider credentials remain separate; no buyer activation credential is part of the manual first-release flow.
 - [ ] Every protected endpoint verifies authentication, current entitlement, action permission, and resource ownership.
 - [ ] Cross-user access is denied across primary storage, caches, exports, jobs, feedback, and logs.
 - [ ] Session creation, expiry, logout, revocation, and recovery behavior are specified.
@@ -404,9 +418,9 @@ This section converts Stage 17's security principles into explicit boundaries th
 
 | Integration point | Producer / caller | Consumer / authority | Required input | Required output / observable result | Failure and security rule |
 |---|---|---|---|---|---|
-| Purchase confirmation intake | Gumroad webhook or controlled reconciliation job (Stage 19) | Entitlement service owned by Stage 17 | Authenticated event or trusted server-side purchase lookup; provider event ID; product/SKU; purchase reference; event timestamp | Validated, deduplicated entitlement command and recorded reconciliation result | Reject unauthenticated/invalid events; idempotently ignore duplicates; never trust browser redirect or client-submitted purchase status |
+| Owner purchase review | Configured owner through protected dashboard/action | Entitlement service owned by Stage 17 | Authenticated owner principal; target account; purchase origin; minimal owner-reviewed reference; decision and timestamp | Validated, auditable entitlement mutation | Reject ordinary users; do not accept client-supplied role/status; do not store full payment payload |
 | Entitlement record write | Verified purchase intake or authorized support workflow | Entitlement store/service | Validated purchase reference, product scope, status transition, actor/reason | Durable entitlement state and audit event | Enforce legal transitions and uniqueness; no grant on uncertain verification; support overrides are narrowly scoped and attributable |
-| Activation claim | Buyer activation UI (Stage 2) | Server-side activation service | Activation credential over HTTPS, minimal account/session-claim data, CSRF protection where cookie-based | Generic success/failure response and authenticated session only after atomic validation | Rate-limit; resist guessing and enumeration; consume single-use credential atomically; do not reveal another buyer's record |
+| Entitlement state check | Protected app route/API | Server-side authorization guard | Authenticated session, current entitlement state, requested resource ownership | Allow only active entitled owner of the resource; otherwise typed denial | Fail closed on lookup failure; never trust client role/status; enforce RLS |
 | Session establishment | Successful activation/authentication service | Session service and protected app shell | Verified identity, entitlement ID, session policy | Secure session cookie/token and server-side session state as selected by Stage 19 | Use secure cookie attributes where cookies are chosen; rotate after privilege change; no tokens in URLs or analytics |
 | Protected-request authorization | Every protected route, API, server action, job, and export | Shared authorization guard | Session identity, requested action, resource owner/tenant, current entitlement state | Allow/deny decision with stable internal reason and minimal safe client response | Default deny if identity, entitlement, ownership, or policy cannot be verified; do not rely on UI hiding controls |
 | User-data scope enforcement | Domain/data access layer (Stage 3) | Storage adapters, caches, background jobs, exports, feedback and lifecycle services | Authenticated user/tenant scope plus requested record identifiers | Only records the caller is authorized to access | Enforce scope server-side on every read/write; test IDOR/cross-user access; never use a public identifier as authorization |
@@ -423,7 +437,7 @@ Stage 19 must select concrete framework and persistence representations, but all
 
 - **Identity:** stable internal user/account identifier; never infer identity from an unverified email or browser-supplied user ID.
 - **Entitlement:** stable entitlement identifier, product scope, authoritative status, verified purchase reference, activation/claim state, timestamps, and auditable status source.
-- **Activation credential:** high-entropy random secret; only a secure verifier/hash retained server-side where possible; expiry/consumption state; rate-limit and attempt metadata that does not store the raw credential.
+- **Owner decision audit:** actor, target user, previous/new state, timestamp, action, minimal purchase reference and privacy-minimized reason; never store full payment details or unnecessary storefront payloads.
 - **Authorization decision:** subject, action, resource scope, decision, normalized reason, policy/version where useful, and correlation ID. Keep detailed reasons internal; expose only safe messages.
 - **Session:** stable session identifier or verifier, subject, creation/expiry/last-activity metadata as required, revocation state, and authentication strength where relevant. Never log the bearer value.
 - **Secret reference:** logical name and environment/scope only; no raw value in contracts, client state, telemetry, or persisted business records.
@@ -440,7 +454,7 @@ Stage 19 must map these logical operations to the chosen framework without chang
 2. **Read current access state:** return only the authenticated caller's minimal account/entitlement state; never return activation verifiers or provider secrets.
 3. **Authorize protected operation:** enforce authentication, current entitlement, permission, and resource ownership server-side for every protected request.
 4. **Receive purchase-provider event:** verify authenticity before processing; validate product identity and state; deduplicate using the provider's stable event/reference; acknowledge only according to the provider's retry contract.
-5. **Reconcile entitlement:** query trusted provider records when required; process status changes idempotently; invalidate or re-check sessions within the declared revocation window.
+5. **Enforce owner-reviewed entitlement:** validate owner-only state changes atomically; enforce current durable entitlement on subsequent protected requests; preserve audit history and user isolation.
 6. **Logout/revoke session:** invalidate the relevant server-side session or rotate/revoke its verifier; do not treat deleting a client UI flag as sufficient.
 7. **Request data export/deletion:** authenticate and scope the request; apply retention/legal holds where applicable; report pending, completed, or blocked accurately.
 8. **Emit security event:** send the minimum redacted event to Stage 18 using a stable schema; telemetry must not contain raw secrets.
@@ -503,7 +517,7 @@ An optional user PIN, complex role hierarchy, multi-tenant organization model, o
 ---
 ## 13. Final architecture decision
 
-**Selected: D — Server-authoritative entitlement and sessions + unique activation credentials + strict separation of platform and user secrets + ownership-scoped access + privacy by default + threat-based release evidence.**
+**Selected: D — Server-authoritative entitlement and sessions + owner-only manual purchase review + strict separation of platform and user secrets + ownership-scoped access + privacy by default + threat-based release evidence.**
 
 This is the strongest fit because it enforces the product's paid-access model without confusing onboarding links with security, prevents a provider credential from becoming a buyer-facing concern, and creates explicit controls for user-data isolation. It keeps security semantics centralized while assigning implementation and verification to the correct later stages.
 
