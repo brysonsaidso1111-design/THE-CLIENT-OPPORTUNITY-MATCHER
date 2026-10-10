@@ -7,6 +7,17 @@
 **Branch:** main  
 **Status:** STAGE 3 — COMPLETED (ARCHITECTURE CONSOLIDATED)
 
+## Owner-approved first-release entitlement/data contract — authoritative override
+
+This section supersedes conflicting earlier wording about automatic purchase activation, activation keys, provider webhooks, and recurring purchase reconciliation. For the first release, a buyer registers and starts in `PENDING`; the configured owner manually checks a Gumroad or Selar purchase record and approves the matching app account. Registration and purchase origin do not themselves grant entitlement.
+
+Canonical persisted entitlement states must be exactly one selected active-state label plus `PENDING`, `REVOKED`, and `BLOCKED`. Do not allow `APPROVED` and `ACTIVE` to drift as separate meanings; choose one canonical stored value and map UI labels at the boundary. The record must bind to the authenticated app user and include purchase origin (Gumroad/Selar), minimal owner-reviewed purchase reference, review/decision timestamps, decision actor, and privacy-minimized audit reason. Do not retain full payment data or unnecessary order payloads.
+
+The owner-only approve/revoke/block action, actor identity, and target account must be validated server-side. A user cannot set their own entitlement, role, or decision actor. State changes must be atomic/concurrency-safe, auditable, and enforced on subsequent protected requests. RLS and ownership checks prevent cross-user access. Entitlement lookup/authorization failures fail closed and preserve Stage 16's distinction between expected `DENIED + denial_code` and technical `FAILED + failure_code`.
+
+Stage 3 defines these data semantics only. Stage 17 owns security/privacy; Stage 19 implements schema, migrations, persistence, and runtime enforcement; Stage 20 verifies actual behavior. No automatic Gumroad/Selar API, webhook, license-key activation, or recurring reconciliation is required for the first release.
+
+
 ---
 
 ## 1. Purpose
@@ -537,7 +548,7 @@ A Recommendation may guide these actions but must never be stored or displayed a
 - production database implementation
 - production frontend implementation
 - authentication, authorization, buyer-entitlement policy, activation credential/session design, and secret management (Stage 17)
-- production purchase verification, Gumroad entitlement synchronization, and provider-specific execution (Stage 19)
+- production persistence and enforcement of owner-reviewed manual entitlement decisions (Stage 19)
 
 Those responsibilities belong to later stages.
 
@@ -545,15 +556,15 @@ Those responsibilities belong to later stages.
 
 ### Cross-cutting buyer-access boundary (reserved for Stages 17 and 19)
 
-Buyer access must remain a separate authorization/entitlement concern, not a matching-domain attribute or a user preference. The domain architecture must permit an authenticated principal to be associated with the appropriate product user/profile while keeping purchase entitlement, activation credential, and session state under Stage 17's security contract. Stage 19 connects verified Gumroad purchase/refund/chargeback events, entitlement records, activation delivery, session establishment, and protected app access.
+Buyer access must remain a separate authorization/entitlement concern, not a matching-domain attribute or a user preference. The domain architecture must permit an authenticated principal to be associated with the appropriate product user/profile while keeping purchase entitlement, activation credential, and session state under Stage 17's security contract. Stage 19 persists owner-reviewed purchase references and entitlement decisions, integrates authenticated sessions, and enforces protected app access. Automatic purchase/refund/chargeback event processing is not a first-release requirement.
 
 The Stage 3 domain model does not define credential storage or security schemas. It does require that:
 - access entitlement is not inferred from a URL, quickstart PDF, client-side flag, or an ordinary User Profile field;
-- each buyer's activation credential and entitlement are distinguishable from the shared Tavily/provider service credential;
+- each user's entitlement decision is separate from their profile, matching data, and shared Tavily/provider service credential;
 - matching data, buyer identity/access records, and provider secrets remain separate data/security domains;
 - later access checks can authorize the user before reading or mutating user-scoped profiles, Hunts, feedback, actions, or lifecycle records.
 
-Stage 17 owns security semantics and credential protection; Stage 19 owns the production integration and persistence mechanisms. Stage 20 verifies bypass resistance, revocation, and authorized/unauthorized paths.
+Stage 17 owns security semantics and credential protection; Stage 19 owns persistence and runtime enforcement of owner-reviewed entitlement decisions. Stage 20 verifies bypass resistance, revocation, and authorized/unauthorized paths.
 
 ---
 
