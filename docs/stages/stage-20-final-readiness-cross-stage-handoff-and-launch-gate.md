@@ -8,6 +8,55 @@
 **Previous stage:** Stage 19 — Integration & Production Architecture  
 **Next stage:** None — final stage in the 20-stage architecture  
 **Status:** STAGE 20 — LAUNCH-GATE ARCHITECTURE CONSOLIDATED; NO IMPLEMENTATION, TEST PASS, OR PRODUCTION READINESS CLAIMED  
+
+## Reconciled first-release entitlement and independent release gate — authoritative override
+
+This section supersedes conflicting earlier wording about activation-key delivery, automatic Gumroad license/API/webhook verification, and recurring refund/dispute reconciliation. First-release access is manual purchase review: account registration creates `PENDING`; the configured owner checks a Gumroad/Selar purchase record and manually approves, revokes, or blocks through a protected owner-only dashboard. Stage 20 must verify the integrated behavior, not the issue descriptions.
+
+**Non-waivable access checks before GO**
+- Pending registration never grants protected access.
+- Only the configured owner can approve/revoke/block; no self-approval, forged client role, or client-side entitlement flag can authorize access.
+- Every protected server request enforces current entitlement and user/resource ownership.
+- Pending/revoked/blocked accounts are denied; revocation/blocking is effective on subsequent protected requests.
+- Owner actions are atomic/concurrency-safe and audited without sensitive purchase data.
+- RLS and server authorization prevent cross-user reads/writes; auth/entitlement lookup failure fails closed.
+- No stale spec, test, or implementation silently requires automatic Gumroad/Selar API, license-key, webhook, or recurring reconciliation. No paid email automation is a launch prerequisite.
+
+## 20-stage dependency, acceptance, and handoff audit
+
+Stage 20 must trace each row to its authoritative `docs/stages/` specification and existing handoff issue. For each stage, record incoming contract consumed, outgoing artifact/contract produced, actual acceptance command/test and result, commit SHA, unresolved defects, and downstream receiver acknowledgement. An issue body or a document checkbox alone is not evidence of runtime passage.
+
+| Stage | Incoming dependency to verify | Required outgoing handoff | Minimum gate evidence |
+|---|---|---|---|
+| 01 Product Definition | Product promise, scope, trust/accessibility constraints | Terminology, invariants, non-claims → 02 | Contract tests reject unsupported claims and preserve human decision-making |
+| 02 User Journey | Stage 01 invariants | Accessible journeys and PENDING/APPROVED/REVOKED/BLOCKED states → 03 | Browser/state tests including denied, pending, degraded, and recovery paths |
+| 03 Domain/Data | Stage 02 states and prior domain vocabulary | Canonical entities, entitlement state, ownership, migrations/contracts → 04 and infrastructure consumers | Schema/contract validation, migration and two-user isolation evidence |
+| 04 Source/Discovery | Stage 03 canonical input/output contracts | Provider-neutral source capabilities and typed outcomes → 05 | Deterministic success/empty/partial/denied/failed/timeout tests |
+| 05 Evidence/Provenance | Stage 04 source records | Claim/evidence/provenance/freshness/conflict contract → 06 | Provenance round-trip; no unsupported verification or source conflation |
+| 06 Normalization | Stages 04–05 source and evidence records | Canonical identity/deduplication and ambiguity handling → 07 | Malformed/duplicate/conflicting fixtures; no false merges |
+| 07 Eligibility | Stage 06 canonical opportunities and evidence | Hard-constraint PASS/FAIL/UNKNOWN → 08 | Table-driven hard-gate, unknown, stale, and conflict tests |
+| 08 Semantic Fit | Stage 07 eligibility and Stage 05 evidence | Fit findings without overriding eligibility → 09 | Tests preserve eligibility and distinguish inference from observation |
+| 09 Scoring | Stage 08 fit plus approved factors | Versioned explainable score → 10 | Deterministic scoring and missingness/uncertainty tests |
+| 10 Ranking | Stage 09 scores and comparability | Stable, policy-versioned ranking → 11 | Tie, incomparability, partial-data, repeatability tests |
+| 11 Intelligence | Stages 05–10 evidence/assessments | Evidence-linked intelligence dossier → 12 | Material claims trace to evidence; incomplete coverage remains explicit |
+| 12 Quality/Risk/Recommendation | Eligibility, fit, score, rank, intelligence | Separate quality/risk/recommendation decision support → 13 | Matrix tests keep dimensions separate and avoid unsupported recommendation |
+| 13 User Decision/Action | Stages 02/07–12 UI and eligibility contracts | Explicit user intent and confirmed outcome distinction → 14 | Idempotency and tests distinguish open/click from confirmed external outcome |
+| 14 Feedback/Learning | Stage 13 attributable outcomes and Stage 17 privacy | Feedback records and versioned evaluation → 15 | Duplicate/untrusted feedback and rollback/evaluation tests |
+| 15 Lifecycle | Canonical opportunity, decisions, feedback, source/evidence freshness | Valid versioned lifecycle transitions → 16 | Transition, stale context, concurrency, duplicate event tests |
+| 16 Failure/Recovery | Contracts from every operation boundary | Typed denial/failure, bounded retry, recovery → 17 | Fault injection proves DENIED differs from FAILED and no failure becomes empty success |
+| 17 Security/Privacy/Trust | Auth identity, Stage 03 entitlement/data contract, Stage 16 failures | Server authorization, owner controls, RLS/privacy/audit → 18 | Adversarial tests: self-approval, forged roles, cross-user access, revocation, secret leaks |
+| 18 Analytics/Observability | Authoritative outcomes from Stages 04–17 | Redacted events/metrics and quality signals → 19 | Event correctness, redaction, cardinality, telemetry-loss tests |
+| 19 Integration/Production | All stage contracts; Stage 17 security; Stage 18 telemetry | Runnable integrated app, pinned dependencies, migrations, adapters, deployment/runbooks/evidence → 20 | Compatibility spike, CI, integration, staging, recovery and rollback evidence on exact SHA |
+| 20 Final Readiness | All 19 outgoing handoffs plus repository release candidate | Independent evidence index, defect disposition, GO/NO-GO decision | Re-run critical checks on exact release SHA/environment; no self-certification or unsupported waiver |
+
+A missing upstream output, unconsumed contract, untested acceptance criterion, absent outgoing handoff, or unresolved contradiction is a blocking defect owned by the stage that controls it. Stage 20 records the owning issue and requires correction/retest; it must not silently repair or waive another stage's semantic contract.
+
+## Current baseline verdict — not a release decision
+
+The baseline commit inspected for the compatibility preflight is `3743878c1c17ab3e7a89b6eb1e8b5c9b58e84c5a`. It is documentation-only and lacks application source, manifest/lockfile, migrations, app tests, and CI workflow. Therefore runtime compatibility, integration, security, and end-to-end checks are **BLOCKED / NOT RUN**. The preflight is recorded in `docs/implementation/stage-19-compatibility-spike-evidence.md`. This evidence is not a Stage 19 pass and cannot support GO.
+
+**Stage 20 decision rule:** GO is allowed only for one identified release-candidate commit in a named environment after required tests pass, P0/P1 security/data/entitlement defects are resolved and retested, deployment/rollback/recovery evidence is verified, and every stage's handoff is accepted. Otherwise record **NO-GO** or **BLOCKED**, name each blocker and owner, and keep the launch gate open. Stage 20 must never declare itself passed solely from documentation consistency or a green build.
+
 **Architecture decision set:** D / D / D / D / D
 
 ---
@@ -73,7 +122,7 @@ Every criterion must link to concrete evidence. Evidence may include:
 
 Evidence must identify the code version or release candidate it actually tests. Results from a different build, a local mock alone, an architecture document, or a developer's uncorroborated assertion do not prove the deployed candidate is safe.
 
-For external providers such as Tavily and Gumroad, use deterministic fixtures for repeatable core tests, plus controlled integration tests for real adapter behavior. A mock proves the local contract, not that a live credential, account, provider API, webhook, or deployment configuration works. Live tests must use controlled test credentials/accounts where available, protect secrets, and avoid causing real customer-facing actions.
+For external provider adapters such as Tavily, use deterministic fixtures for repeatable core tests, plus controlled integration tests for real adapter behavior. A mock proves the local contract, not that a live credential, account, or deployment configuration works. Purchase review is a manual owner action in the first release, not a provider adapter. Live tests must use controlled test accounts where applicable, protect secrets, and avoid causing real customer-facing actions.
 
 For each criterion, record one of:
 - **PASS** — evidence meets the stated acceptance rule;
@@ -140,14 +189,14 @@ This map assigns accountability; it does not imply that any listed capability ha
 - Verify the UI reports incomplete/unavailable discovery without claiming that no matching opportunities exist.
 
 #### Gumroad and buyer-only access
-- Verify the actual purchase-verification mechanism and webhook authenticity/replay protection, not merely the success redirect.
-- Verify the intended purchase-to-activation flow: purchase → quickstart PDF and app link → unique activation credential or approved secure activation path → server-side entitlement validation → authorized session.
+- Verify the owner manually reviews the Gumroad/Selar purchase record and only the configured owner can change entitlement; automatic purchase-provider verification/webhooks are not required for this release.
+- Verify the intended access flow: purchase → app registration → PENDING → owner purchase review → owner approval → server-side entitlement validation → authorized session.
 - Verify an app URL or PDF alone cannot grant access.
 - Verify invalid, expired, reused where prohibited, revoked, refunded, or otherwise ineligible entitlements are handled according to Stage 17's rules.
 - Verify legitimate buyers have a safe recovery route for lost activation access and transient provider failures do not silently grant or permanently misrepresent entitlement.
-- Verify Gumroad Ping is treated as an untrusted sale hint unless a documented signature is actually supported; verify no refund/dispute event types are assumed without evidence.
-- Verify non-incrementing license verification, exact product binding, current refund/dispute reconciliation, idempotent single-account activation, 15-minute reconciliation/normal revocation target, and 24-hour maximum stale-positive window.
-- Verify that activation credentials, user PINs if implemented, session credentials, purchase credentials, and provider secrets are separate credential classes.
+- Verify no stale document or implementation silently requires Gumroad Ping, purchase webhooks, license activation, or automatic refund/dispute reconciliation for the manual first-release flow.
+- Verify pending/approved/revoked/blocked states, owner-only approval, no self-approval, atomic state changes, RLS, audited decisions, and denial on subsequent protected requests after revocation/blocking.
+- Verify that session credentials, minimal purchase-review metadata, and provider secrets are separate data/credential classes; no buyer activation credential is used in the manual first-release flow.
 - Verify purchase/entitlement state changes propagate according to the approved revocation and session policy.
 
 #### User-specific data and persistence
@@ -343,9 +392,9 @@ Stage 20 is the final stage; it has no successor stage. Its output is the contro
 | 14 — Feedback & learning | Capture feedback as a fallible signal; govern what can be learned and how changes are evaluated | Stage 13 events plus evidence and assessment provenance | Attributable, quality-controlled feedback and learning proposals to future assessment/review paths | **Ready.** Feedback cannot rewrite historical facts or silently change model behavior. |
 | 15 — Opportunity lifecycle | Own canonical workflow states, legal transitions, transition history, stale context, closure, and reactivation | Stage 13 actions, assessment versions, persistence outcomes | Lifecycle state/transition contract to Stage 16 and durable integration in Stage 19 | **Ready.** Lifecycle state is distinct from assessment and technical health. |
 | 16 — Failure, degradation & recovery | Define typed technical outcomes, safe degradation, bounded retries, idempotency, and recovery | All prior stage contracts | Failure/result envelope to Stage 19, security constraints to 17, telemetry semantics to 18, acceptance cases to 20 | **Ready.** Failure is never converted to an empty success or false domain conclusion. |
-| 17 — Security, privacy & trust | Define buyer-only entitlement, activation/session controls, credential separation, resource ownership, privacy, and threat-based acceptance | Stages 1–3 and 16 | Security rules and testable access invariants to Stage 19 and release blockers to Stage 20 | **Ready as policy.** Implementation must prove server-side enforcement and user isolation. |
+| 17 — Security, privacy & trust | Define owner-reviewed buyer entitlement, authenticated sessions, owner-only approve/revoke/block, resource ownership, privacy, and threat-based acceptance | Stages 1–3 and 16 | Security rules and testable access invariants to Stage 19 and release blockers to Stage 20 | **Ready as policy.** Implementation must prove server-side enforcement and user isolation. |
 | 18 — Analytics, observability & quality | Define operational/product events, quality metrics, privacy-safe telemetry, alertable conditions, and release evidence | Stage 16 failure taxonomy, domain-owned quality semantics, Stage 17 privacy rules | Versioned event/metric contract and minimum operational signals to Stage 19/20 | **Ready as contract.** Instrumentation and dashboards remain implementation work. |
-| 19 — Integration & production | Connect the one application to hosting, persistence, identity, Gumroad, Tavily, telemetry, deployment, and recovery | Stages 1–18 | Integrated release candidate, reproducible tests, operations/runbooks, and evidence package to Stage 20 | **Ready after the approved implementation decision record and compatibility spike below.** |
+| 19 — Integration & production | Connect the one application to hosting, persistence, identity, manual owner entitlement review, Tavily, telemetry, deployment, and recovery | Stages 1–18 | Integrated release candidate, reproducible tests, operations/runbooks, and evidence package to Stage 20 | **Ready after the approved implementation decision record and compatibility spike below.** |
 | 20 — Final readiness & launch gate | Audit handoffs, verify release-critical invariants, collect test/operational evidence, and make go/no-go decision | Stages 1–19 and the exact release candidate | Evidence-backed launch decision, rollback/recovery disposition, and unresolved-risk record | **Ready as the gate.** It cannot approve launch from architecture documents alone. |
 
 ### 8.2 Cross-stage consistency findings and dispositions
@@ -361,7 +410,7 @@ The document scan confirmed:
 
 **Corrections applied during this audit:** placeholder handoff wording has been removed from Stages 2–4; Stage 2 and Stage 3 explicitly distinguish Stage 15 opportunity lifecycle from Stage 16 technical failure/recovery; Stage 17 maps protected-access decisions to Stage 16's typed failure/recovery outcomes; Stage 18 preserves the same outcome taxonomy and failure/recovery lineage in telemetry; Stage 19 records the approved initial implementation stack and mandatory compatibility spike, and its implementation sequence places that spike before full product feature work. The final pass also separated expected authorization denial from technical failure: `DENIED` plus `denial_code` is now distinct from `FAILED` plus `failure_code` across Stages 16–20. Valid partial results use `SUCCESS_PARTIAL` plus structured `PARTIAL_RESULT` context, while `CANCELLED` remains a status rather than a failure code. Stage 19 now documents why the more mature OpenNext path is intentionally selected over Cloudflare's newer beta vinext path, pins the `@supabase/ssr` compatibility risk to a mandatory spike, and removes an unselected transactional-email fallback from the buyer activation contract.
 
-**Additional integration correction from the final readiness pass:** the Gumroad purchase contract no longer assumes that Ping is signed or that separate refund/dispute notifications exist. Stage 17 now separates an untrusted notification from a provider-verification outage and defines a 15-minute reconciliation/normal-revocation target plus a 24-hour maximum stale-positive entitlement window. Stage 19 treats Ping as a trigger only, corroborates the current purchase state through supported server-to-Gumroad lookups, uses non-incrementing license verification for routine checks, and keeps single-account activation enforced by a local atomic claim. These details are now explicit coding contracts and mandatory compatibility-spike tests.
+**Additional access-contract correction from the final readiness pass:** first-release paid access uses manual Gumroad/Selar purchase review by the configured owner. Registration remains PENDING until the owner records approval; owner-only approve/revoke/block actions are server-enforced and audited; protected requests check current entitlement and ownership; pending/revoked/blocked accounts are denied; and auth/entitlement-store failures fail closed. Automatic provider API/webhook/license-key activation and recurring refund/dispute reconciliation are not first-release requirements. The Stage 19 runtime compatibility spike remains BLOCKED / NOT RUN because the audited baseline has no app source, package manifest/lockfile, migrations, app test suite, or CI workflow; see the linked compatibility-spike evidence report.
 
 **Remaining runtime gates:** exact dependency versions must be pinned; live provider credentials/accounts must be configured securely; the compatibility spike must pass; database migrations, adapters, UI, telemetry, and end-to-end flows must be implemented and tested. These are not unresolved handoff ambiguities; they are implementation/runtime facts that cannot be truthfully marked PASS before the selected stack is exercised. No live Tavily/Gumroad credentials are required to author or review the architecture documents.
 
@@ -376,7 +425,7 @@ Implement the same application incrementally; do not build 20 separate apps.
 5. **Opportunity pipeline:** Stage 6 normalization → Stage 7 eligibility → Stage 8 semantic fit → Stage 9 score → Stage 10 rank → Stage 11 intelligence → Stage 12 quality/risk/recommendation.
 6. **User workflow:** Stage 13 decisions/actions → Stage 15 lifecycle persistence → Stage 14 feedback and governed learning.
 7. **Observability and resilience:** Stage 16 failures/recovery plus Stage 18 events, redaction, metrics, and alerts.
-8. **Production integration:** Gumroad verification/reconciliation, activation, revocation, secret rotation, migrations, backups, rollback, and operational runbooks.
+8. **Production integration:** owner-reviewed entitlement persistence and enforcement, revocation/blocking, secret rotation, migrations, backups, rollback, and operational runbooks. Do not add automatic purchase-provider integration without a separately approved decision.
 9. **Release candidate and Stage 20 gate:** run automated tests, controlled live integration tests, accessibility checks, security tests, recovery drills, and evidence review. Fix failed criteria in their owning stage before release.
 
 ### 8.4 Coding entry decision
