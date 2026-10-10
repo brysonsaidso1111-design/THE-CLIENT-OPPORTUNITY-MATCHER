@@ -5,9 +5,9 @@
 
 ## Repository status
 
-This repository currently contains the **20-stage architecture specifications** under `docs/stages/`. These documents define product behavior, contracts, stage ownership, handoffs, security boundaries, integration requirements, and the final launch gate.
+This repository contains the **20-stage architecture specifications** under `docs/stages/` and is beginning the Stage 19 executable compatibility work. Candidate PR [#29](https://github.com/brysonsaidso1111-design/THE-CLIENT-OPPORTUNITY-MATCHER/pull/29) adds a minimal Next.js App Router build harness, exact direct dependency pins, a server-only Supabase SSR helper, OpenNext/Wrangler configuration, and a hosted build workflow. Hosted run [#38093572120](https://github.com/brysonsaidso1111-design/THE-CLIENT-OPPORTUNITY-MATCHER/actions/runs/38093572120) passed dependency generation/install, typecheck/contract tests, Next.js build, and OpenNext Worker build on the candidate commit. The generated lockfile was committed at `0f6ba499483df918c3fe8bed1cfdcae3206bea66`; a fresh run against that committed checkout is still required.
 
-**Architecture documentation is not application implementation.** The current `main` baseline has no application source tree, package manifest/lockfile, automated test suite, database migration files, or CI workflow. Do not describe the application as built, runnable, integrated, tested, or production-ready until those artifacts exist and the relevant checks have actually passed.
+**This is not the finished application and not production readiness.** Database migrations/RLS, real Supabase session lifecycle, runtime secret isolation, durable owner approval/revoke/block persistence, live Tavily connectivity, the 20 stages' feature implementation, full security/E2E testing, and independent Stage 20 release verification remain incomplete. Do not skip stages or describe the product as production-ready.
 
 ## Locked implementation rules
 

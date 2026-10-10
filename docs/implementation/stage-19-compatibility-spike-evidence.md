@@ -55,3 +55,17 @@ This is real hosted CI evidence for the contract harness only. It is not a live 
 ## 5. Stop/go
 
 **Current verdict: NO-GO for full feature implementation and production release.** The contract harness is now implemented and its hosted syntax/tests passed. The full Stage 19 compatibility spike remains incomplete because the selected production stack, secure sessions, durable migrations/RLS, runtime secret isolation, and deployment path have not been tested. Stage 20 must remain independent and cannot treat contract unit tests as proof of release readiness.
+
+
+## 6. Hosted framework compatibility result — 2026-10-10
+
+- **Workflow:** [Stage 19 Next.js/OpenNext compatibility run #38093896644](https://github.com/brysonsaidso1111-design/THE-CLIENT-OPPORTUNITY-MATCHER/actions/runs/38093896644)
+- **Tested commit:** `e5eb883f5d2760e778380ebb1e2dd110a8c829b4`
+- **Result:** workflow completed successfully. Lock generation, clean `npm ci`, TypeScript/contract checks, Next.js production build, OpenNext Cloudflare Worker build, and lockfile artifact upload all passed.
+- **Lockfile commit created by workflow:** `0f6ba499483df918c3fe8bed1cfdcae3206bea66`
+- **Lockfile:** npm lockfile v3; 472 package entries; SHA-256 `4dff7d38cdf4c3dea11316a0a09427c2542695e2854a866e66cf801a50c2d398`.
+- **Important:** the lockfile was generated and used for `npm ci` and both builds in this run, then committed. A fresh run against the branch containing that committed lockfile remains required to verify the committed checkout.
+
+## 7. Remaining non-waivable gates
+
+Real Supabase SSR sign-in/refresh/expiry/logout and cache behavior; database migrations, transactions, RLS/two-user isolation; runtime secret injection and client/source-map/log leakage; durable manual entitlement persistence, owner-only dashboard/actions, audit and revocation propagation; and live non-production Tavily compatibility are still **BLOCKED / NOT RUN**. Stage 19 is not complete and full feature coding remains gated by the unresolved security-critical checks. Stage 20 remains independent and **NO-GO / BLOCKED**.

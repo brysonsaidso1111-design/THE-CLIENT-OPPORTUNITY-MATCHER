@@ -1,7 +1,7 @@
 # Implementation Baseline & Defect Register
 
 **Last audited:** 2026-10-10  
-**Scope:** Repository baseline and readiness evidence  
+**Scope:** Repository baseline and readiness evidence, including Stage 19 spike candidate  
 **Architecture:** The approved 20-stage sequence is preserved. This register does not authorize an architecture redesign.
 
 ## Status definitions
@@ -19,14 +19,14 @@ Do not invent file paths, line numbers, function names, root causes, reproductio
 
 | ID | Type / severity | Owning stage | Status | Finding | Evidence / next action |
 |---|---|---|---|---|---|
-| BASE-001 | Implementation blocker / P1 | Stage 19; release impact Stage 20 | OPEN — NOT IMPLEMENTED | No application source tree is present on the audited `main` baseline. | Implement one coherent application after the Stage 19 compatibility spike. No source file or line can be cited because the source tree is absent. |
-| BASE-002 | Implementation blocker / P1 | Stage 19; release impact Stage 20 | OPEN — NOT IMPLEMENTED | No package manifest or dependency lockfile is present. The application build/runtime cannot yet be reproduced from the repository. | Confirm the locked stack in the compatibility spike; add manifest and lockfile only with the chosen implementation. |
+| BASE-001 | Implementation blocker / P1 | Stage 19; release impact Stage 20 | PARTIALLY IMPLEMENTED | The pre-spike baseline had no app source. Candidate PR #29 adds only a minimal App Router page/layout for build validation, not the product journey or protected feature UI. | Continue stage-by-stage implementation only after the remaining Stage 19 security/data compatibility gates pass. The minimal page is a spike harness, not a completed product. |
+| BASE-002 | Implementation blocker / P1 | Stage 19; release impact Stage 20 | PARTIALLY IMPLEMENTED | Candidate PR #29 pins exact direct dependencies and its hosted workflow generated a lockfile and passed a clean `npm ci`; the generated lockfile was committed at `0f6ba499483df918c3fe8bed1cfdcae3206bea66`; a fresh run against that committed checkout remains required. | Verify the committed `package-lock.json` with a fresh clean install on the updated PR head; do not mark dependency closure verified before that run. |
 | BASE-003 | Implementation blocker / P1 | Stage 3 and Stage 19; release impact Stage 20 | OPEN — NOT IMPLEMENTED | No database migration files are present, despite a former Stage 20 matrix sentence claiming migrations were implemented. That sentence was corrected in the Stage 20 specification. | Define versioned migrations from the authoritative Stage 3 contracts during the Stage 19 security/data foundation; test migration and recovery behavior. |
-| BASE-004 | Verification blocker / P1 | Stage 19; release impact Stage 20 | OPEN — NOT VERIFIED | No automated application test suite is present. | Add unit/contract, adapter, security, integration, and end-to-end tests with stage traceability as implementation proceeds. |
-| BASE-005 | Verification blocker / P1 | Stage 19; release impact Stage 20 | OPEN — NOT VERIFIED | No CI workflow is present. | Establish reproducible install, lint/type-check/build/test checks once the selected runtime and package manager are pinned. |
+| BASE-004 | Verification blocker / P1 | Stage 19; release impact Stage 20 | PARTIALLY IMPLEMENTED / NOT FULLY VERIFIED | Node contract tests exist and 20/20 passed in hosted CI; no database-backed, real session, browser E2E, or full security suite exists yet. | Add database/session/security/E2E coverage under the owning stages and record each environment/mode honestly. |
+| BASE-005 | Verification blocker / P1 | Stage 19; release impact Stage 20 | PARTIALLY IMPLEMENTED | GitHub Actions runs the contract harness and the candidate Next.js/OpenNext spike. The generated lockfile must be committed and the complete workflow rerun on the committed lock. | Extend CI with migration/RLS, secret-leak, security, lint, and end-to-end checks as the relevant implementation stages land. |
 | DOC-001 | Documentation defect / P2 | Stage 20 | RESOLVED | Stage 20 incorrectly stated that Stage 3 schema migrations were implemented and verified. | Corrected on 2026-10-10: migrations are explicitly NOT IMPLEMENTED / NOT VERIFIED in the current baseline. See the Stage 20 specification and merged PR #24. |
 
-**Important:** BASE-001 through BASE-005 are implementation/verification blockers, not proof of defective application code. No application code has yet been audited because it is not present in the baseline.
+**Important:** BASE-001 through BASE-005 track incomplete implementation/verification, not proof of defective application code. The current candidate includes a minimal spike app and test harness; this is not the finished product.
 
 ## Runtime / architecture gate
 

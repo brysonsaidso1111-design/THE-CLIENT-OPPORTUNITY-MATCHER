@@ -6,9 +6,9 @@
 
 ## 1. Repository truth and current readiness
 
-The current main baseline is architecture and handoff documentation, not a runnable application. It contains no application source tree, package manifest/lockfile, database migration files, automated application test suite, or CI workflow. The Stage 20 statement that migrations were already implemented was corrected; the baseline/defect register records the evidence and blockers.
+The pre-spike main baseline was architecture and handoff documentation only. The Stage 19 candidate in [PR #29](https://github.com/brysonsaidso1111-design/THE-CLIENT-OPPORTUNITY-MATCHER/pull/29) now adds a minimal Next.js App Router foundation, exact direct dependency pins, a request-scoped server-only Supabase SSR helper, OpenNext/Wrangler configuration, and hosted build checks. Hosted run [#38093572120](https://github.com/brysonsaidso1111-design/THE-CLIENT-OPPORTUNITY-MATCHER/actions/runs/38093572120) passed lock generation, clean install, TypeScript check, contract tests, Next.js production build, and OpenNext Worker build on candidate commit `f6006829384d224063cff3da67a9c5cac3f512e5`.
 
-This preparation pack completes the documentation, implementation sequencing, test strategy, configuration inventory, commit discipline, and handoff tracking needed before feature coding. It does not claim the compatibility spike or app implementation has already passed.
+The stack lockfile was generated and clean-installed in that run, then committed by the workflow at `0f6ba499483df918c3fe8bed1cfdcae3206bea66`. A fresh run against the committed checkout is required. This is still only the framework/build slice. Database migrations/RLS, real Supabase session lifecycle, runtime secret-leak checks, durable entitlement persistence/audit, and live Tavily connectivity remain unverified. The Stage 20 statement claiming migrations were implemented was corrected; migrations remain required work, not an existing artifact.
 
 ## 2. Locked decisions and authority boundaries
 
@@ -24,7 +24,7 @@ This preparation pack completes the documentation, implementation sequencing, te
 
 ## 3. Mandatory pre-feature compatibility spike
 
-This is the first coding activity after the preparation pack is merged. Keep it small, isolated, and evidence-producing; do not build the full product on an unverified stack.
+The spike has progressed beyond repository inventory: hosted contract tests passed 20/20, and the candidate Next.js/OpenNext build path passed in run #38093572120. The reproducible lockfile is being committed and must be validated by a subsequent clean install from the committed file. The remaining security-critical gates below are still non-waivable; do not start full feature coding until they pass. Keep the spike isolated and evidence-producing; do not build the full product on an unverified security/data foundation.
 
 1. Pin candidate runtime/package/dependency versions and prove the Next.js App Router build/deploy path through Cloudflare/OpenNext.
 2. Verify Supabase SSR sign-in, cookie write/refresh, expiry, logout, revocation, authenticated response caching (private, no-store), and protected route behavior.
