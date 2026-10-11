@@ -41,6 +41,8 @@ test("normalization validates URLs and preserves unknowns without inventing fact
   assert.equal(item.canonicalKey, "https://example.com/jobs/website-redesign");
   assert.throws(() => normalizeOpportunity(candidate({ url: "javascript:alert(1)" })), /HTTP\(S\)/);
   assert.throws(() => normalizeOpportunity(candidate({ budgetMax: -1 })), /budgetMax/);
+  assert.throws(() => normalizeOpportunity(candidate({ evidence: {} })), /evidence must be an array/);
+  assert.equal(normalizeOpportunity(candidate({ url: "https://EXAMPLE.com/CaseSensitivePath" })).canonicalKey, "https://example.com/CaseSensitivePath");
 });
 
 test("evidence summary preserves conflicts, stale facts and explicit knowledge states", () => {
@@ -95,7 +97,7 @@ test("fit dimensions and score expose their limitations and withhold insufficien
 
 test("ranking keeps ineligible and uncertain opportunities out of the eligible ranked set", () => {
   const result = assessOpportunitySet({
-    candidates: [candidate(), candidate({ id: "opp-2", url: "https://example.com/jobs/remote-copywriter", title: "Remote copywriter", skills: ["copywriting"] })],
+    candidates: [candidate(), candidate({ id: "opp-2", url: "https://example.com/jobs/remote-copywriter", title: "Remote copywriter", skills: ["copywriting"], remote: null })],
     profile: { capabilities: ["web design"], services: ["website redesign"], sectors: ["accounting"], contextTerms: ["remote"] },
     constraints: [{ field: "remote", operator: "equals", value: true, required: true }],
   });
