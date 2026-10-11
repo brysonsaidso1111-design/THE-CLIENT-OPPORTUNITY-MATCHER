@@ -86,8 +86,12 @@ export function normalizeOpportunity(candidate) {
   }
   const url = safeHttpUrl(candidate.url, "url");
   const sourceName = requireText(candidate.sourceName, "sourceName");
-  const skills = uniqueStrings(Array.isArray(candidate.skills) ? candidate.skills : []);
-  const tags = uniqueStrings(Array.isArray(candidate.tags) ? candidate.tags : []);
+  if (candidate.skills !== undefined && !Array.isArray(candidate.skills)) throw new TypeError("skills must be an array");
+  if (candidate.tags !== undefined && !Array.isArray(candidate.tags)) throw new TypeError("tags must be an array");
+  if (candidate.evidence !== undefined && !Array.isArray(candidate.evidence)) throw new TypeError("evidence must be an array");
+  if (candidate.limitations !== undefined && !Array.isArray(candidate.limitations)) throw new TypeError("limitations must be an array");
+  const skills = uniqueStrings(candidate.skills ?? []);
+  const tags = uniqueStrings(candidate.tags ?? []);
   const budgetMax = candidate.budgetMax ?? null;
   if (budgetMax !== null && (!Number.isFinite(budgetMax) || budgetMax < 0)) {
     throw new TypeError("budgetMax must be a non-negative finite number or null");
@@ -106,7 +110,8 @@ export function normalizeOpportunity(candidate) {
   const title = requireText(candidate.title, "title");
   return Object.freeze({
     id: optionalText(candidate.id) ?? canonicalUrl.toString(),
-    canonicalKey: canonicalUrl.toString().toLocaleLowerCase("en"),
+    // Hostnames are case-insensitive; preserve path/query case because servers may not be.
+    canonicalKey: canonicalUrl.toString(),
     title,
     description: optionalText(candidate.description) ?? "",
     organization,
