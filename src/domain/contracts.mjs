@@ -96,7 +96,8 @@ export function evaluateEligibility(constraints) {
   const requiredUnknowns = evaluated.filter((item) => item.required && (item.state === "UNKNOWN" || item.state === "NOT_EVALUATED")).length;
 
   let state;
-  if (requiredFailures > 0) state = "FAIL";
+  if (constraints.length === 0) state = "UNKNOWN";
+  else if (requiredFailures > 0) state = "FAIL";
   else if (requiredUnknowns > 0) state = "UNKNOWN";
   else state = "PASS";
 
