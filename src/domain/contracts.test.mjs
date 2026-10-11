@@ -16,7 +16,7 @@ test("operation outcome vocabulary and typed denial/failure are enforced", () =>
   assert.throws(() => operationOutcome("DENIED"), /denial_code/);
   assert.throws(() => operationOutcome("FAILED"), /failure_code/);
   assert.throws(() => operationOutcome("DENIED", { failure_code: "SECRET_DETAIL" }), /denial_code/);
-  assert.throws(() => operationOutcome("SUCCESS", { failure_code: "NO" }), /successful outcomes/);
+  assert.throws(() => operationOutcome("SUCCESS", { failure_code: "NO" }), /Successful outcomes/);
   assert.throws(() => operationOutcome("SUCCESS", { rawDiagnostic: "private" }), /Unsupported outcome field/);
 });
 
