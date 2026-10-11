@@ -43,6 +43,6 @@ test("eligibility uses hard constraints only and never upgrades unknown to pass"
   assert.equal(evaluateEligibility([{ required: true, matches: true }, { required: true, matches: null }]).state, "UNKNOWN");
   assert.equal(evaluateEligibility([{ required: true, matches: true }, { required: false, matches: null }]).state, "PASS");
   assert.equal(evaluateEligibility([{ required: true, observedState: "NOT_EVALUATED" }]).state, "UNKNOWN");
-  assert.equal(evaluateEligibility([]).state, "PASS");
+  assert.equal(evaluateEligibility([]).state, "UNKNOWN");
   assert.throws(() => evaluateEligibility({}), /array/);
 });
