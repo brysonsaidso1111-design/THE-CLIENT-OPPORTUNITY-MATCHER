@@ -69,7 +69,8 @@ test("hard constraint evaluation does not treat missing values as a pass", () =>
     { field: "remote", operator: "equals", value: true, required: true },
     { field: "budgetMax", operator: "min", value: 1000, required: true },
   ]).state, "UNCERTAIN");
-  assert.equal(evaluateOpportunityEligibility(item, [
+  const knownRemote = normalizeOpportunity(candidate({ remote: true }));
+  assert.equal(evaluateOpportunityEligibility(knownRemote, [
     { field: "remote", operator: "equals", value: false, required: true },
   ]).state, "INELIGIBLE");
   assert.equal(evaluateOpportunityEligibility(item, []).state, "UNCERTAIN");
