@@ -1,6 +1,6 @@
 # Implementation Readiness Plan — THE CLIENT OPPORTUNITY MATCHER™
 
-**Status:** Pre-coding preparation pack  
+**Status:** Coding may begin for non-protected domain and UI slices; protected integrations remain gated  
 **Prepared:** 2026-10-10  
 **Authority:** The 20 files under docs/stages/ remain the product and architecture source of truth. This plan operationalizes them; it does not replace or redesign them.
 
@@ -24,7 +24,7 @@ The stack lockfile was generated and clean-installed in that run, then committed
 
 ## 3. Mandatory pre-feature compatibility spike
 
-The spike has progressed beyond repository inventory: hosted contract tests passed 20/20, and the candidate Next.js/OpenNext build path passed in run #38093572120. The reproducible lockfile is being committed and must be validated by a subsequent clean install from the committed file. The remaining security-critical gates below are still non-waivable; do not start full feature coding until they pass. Keep the spike isolated and evidence-producing; do not build the full product on an unverified security/data foundation.
+The spike has progressed beyond repository inventory: hosted contract tests passed 20/20, and the candidate Next.js/OpenNext build path passed in run #38093572120. The reproducible lockfile is being committed and must be validated by a subsequent clean install from the committed file. The remaining security-critical gates below are non-waivable for protected access, durable user data, live integrations, and release. They do NOT block all coding. Begin pure domain contracts, deterministic unit-tested business logic, accessible UI shells, fixtures, and provider-independent stages now, in stage order and with explicit handoffs. Do not expose a protected route, persist sensitive user data, connect live providers, or claim production readiness until its relevant gate passes.
 
 1. Pin candidate runtime/package/dependency versions and prove the Next.js App Router build/deploy path through Cloudflare/OpenNext.
 2. Verify Supabase SSR sign-in, cookie write/refresh, expiry, logout, revocation, authenticated response caching (private, no-store), and protected route behavior.
@@ -35,11 +35,11 @@ The spike has progressed beyond repository inventory: hosted contract tests pass
 7. Prove CI can install from the lockfile and run type-check, lint, unit/contract tests, and a production build without production secrets.
 8. Record commands, versions, environment, results, failed checks, evidence links, and unresolved risks in the Stage 19 issue and defect register.
 
-**Stop/go:** if secure sessions, user isolation, secret isolation, migration safety, or the build path fails, stop full feature coding. Fix within the approved architecture where possible; otherwise document the evidence and request explicit review before changing a locked decision.
+**Stop/go boundary:** a failed security/data/build gate blocks the affected integration and any protected feature that depends on it; it does not freeze unrelated pure-domain work. Fix within the approved architecture where possible; otherwise document the observed evidence and request explicit review before changing a locked decision.
 
 ## 4. Implementation sequence and dependency handling
 
-The compatibility spike is a technical prerequisite, not a reordering of the semantic architecture. After it passes:
+The compatibility spike is a technical prerequisite for integrated/protected execution, not a blanket prerequisite for writing and testing pure code. Start the following work now; connect each slice only after its dependency and owning gate pass:
 
 1. Establish repository/tooling, secure server boundary, environment validation, shared typed operation/error envelopes, and test fixtures under Stage 19 infrastructure ownership.
 2. Implement the domain/data contracts from Stage 3 and migrations before persistent features consume them.
@@ -78,24 +78,34 @@ Infrastructure needed earlier than its semantic owner is permitted only as an en
 
 - Never trust a checkout redirect, browser state, hidden field, or client-supplied entitlement flag as purchase proof.
 - Every protected server operation checks authenticated identity, entitlement freshness, and ownership.
-- Enforce unique/atomic activation binding; process purchase notifications idempotently; reconcile current sale/refund/dispute status through documented authoritative API behavior.
+- Enforce unique/atomic entitlement decisions and audit. For first release, the owner manually checks the Gumroad/Selar purchase record; do not build provider API/webhook/license-key activation or automated reconciliation.
 - Keep Tavily and database service-role secrets server-only; never log credentials or raw sensitive payloads. The manual first-release flow does not require a Gumroad/Selar API or webhook secret.
 - Keep user data row-scoped and enforce database RLS as defense in depth. Test cross-user read/write denial.
 - Preserve provider-versus-original-publisher provenance. Treat external content as untrusted data, not instructions.
 - Fail closed for new activations when purchase verification is unavailable. Distinguish expected DENIED + denial_code from technical FAILED + failure_code. Never convert technical failure to empty success.
 - Keep marketplace automated access disabled until approved-use evidence exists for the exact surface; a public profile or service listing is not proof of a client opportunity.
 
-## 8. Definition of ready for the first full feature stage
+## 8. Coding entry gate versus protected-integration/release gate
 
-- [ ] This preparation pack and its stage matrix are merged.
-- [ ] Existing stage handoff issues are updated to track implementation evidence and reopened where implementation remains outstanding.
-- [ ] Compatibility spike passes with recorded versions, commands, and results.
-- [ ] Package manifest and lockfile are committed.
-- [ ] CI runs type-check, lint, unit/contract tests, and build from a clean checkout.
-- [ ] Server-only secret and two-user isolation checks pass.
-- [ ] Database migration/RLS proof passes in a non-production environment.
-- [ ] Manual purchase-review contracts are consistent; owner actions are server-authorized, auditable, isolated, and fail closed. Automatic Gumroad/Selar API/webhook integration is not assumed.
-- [ ] Open blockers and accepted/deferred scope are recorded.
+### Coding entry gate — satisfied for pure, testable implementation
+- [x] Approved 20-stage architecture and stage handoffs exist and remain authoritative.
+- [x] Exact direct dependencies and committed lockfile exist; prior hosted framework build evidence is recorded.
+- [x] Shared executable operation-outcome, entitlement-state predicate, constraint-evaluation, and eligibility contracts have been added under `src/domain/contracts.mjs` with Node test coverage on the implementation branch.
+- [ ] The new branch's CI run must pass before merging these starter contracts.
+
+This entry gate permits coding now on pure domain modules, deterministic tests, non-sensitive UI shells, fixtures, and other work whose correctness does not depend on live database/session/provider behavior. Implement in approved stage order and preserve every handoff. Do not use mock data as proof of production integration.
+
+### Protected-integration and release gate — still mandatory
+- [ ] Fresh clean install from the committed lockfile, TypeScript check, tests, Next production build, and OpenNext Worker build pass on the actual merged code.
+- [ ] Database migrations, constraints, transaction behavior, RLS, and two-user isolation pass against a non-production Supabase/PostgreSQL environment.
+- [ ] Real Supabase session lifecycle, protected route enforcement, entitlement freshness, and private/no-store cache behavior pass.
+- [ ] Server-only secret injection and browser/source-map/response/log leak checks pass.
+- [ ] Manual purchase-review approval/revoke/block, audit, concurrency, and revocation propagation pass database-backed tests.
+- [ ] Tavily live non-production compatibility passes; marketplace access remains disabled without written authorization for the exact surface and use.
+- [ ] End-to-end, accessibility, recovery, regression, and independent Stage 20 launch-gate evidence passes.
+- [ ] Existing handoff issues record exact PR/commit, test run, results, unresolved defects, and outgoing dependencies.
+
+A failed protected-integration gate blocks only the affected integration/protected behavior and release—not unrelated pure-domain coding. Never label the application production-ready until Stage 20 records an evidence-based GO.
 
 ## 9. Linked control documents
 
