@@ -30,6 +30,7 @@ test("only canonical ACTIVE entitlement allows access", () => {
 test("constraint evaluation preserves unknown and not-evaluated states", () => {
   assert.deepEqual(evaluateConstraint({ required: true, matches: true }), { state: "PASS", required: true });
   assert.deepEqual(evaluateConstraint({ required: true, matches: false }), { state: "FAIL", required: true });
+  assert.deepEqual(evaluateConstraint({ required: true, observedState: "PASS" }), { state: "PASS", required: true });
   assert.deepEqual(evaluateConstraint({ required: true, matches: null }), { state: "UNKNOWN", required: true });
   assert.deepEqual(evaluateConstraint({ required: false, observedState: "NOT_EVALUATED" }), { state: "NOT_EVALUATED", required: false });
   assert.throws(() => evaluateConstraint({ matches: true }), /required/);
