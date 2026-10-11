@@ -74,6 +74,7 @@ export function evaluateConstraint(constraint) {
   const observed = constraint.observedState;
   if (observed === "NOT_EVALUATED") return { state: "NOT_EVALUATED", required: constraint.required };
   if (observed === "FAIL") return { state: "FAIL", required: constraint.required };
+  if (observed === "PASS") return { state: "PASS", required: constraint.required };
   if (observed === "UNKNOWN" || constraint.matches == null) {
     return { state: "UNKNOWN", required: constraint.required };
   }
