@@ -57,3 +57,193 @@ h1 {
   color: var(--muted);
   font-size: .875rem;
 }
+
+/* Structured prospect cards. The parent grid and each card stretch equally. */
+.prospect-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  grid-auto-rows: 1fr;
+  align-items: stretch;
+  gap: 1rem;
+}
+
+.prospect-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 1.1rem;
+  background: var(--panel);
+}
+
+.prospect-card__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: 1.15rem;
+  gap: .85rem;
+}
+
+.prospect-card__eyebrow,
+.peer-network-link__eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.prospect-card__title {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.prospect-card__section h3,
+.prospect-card__unknowns h3 {
+  margin: 0 0 .35rem;
+  font-size: .82rem;
+  font-weight: 750;
+}
+
+.prospect-card__section p,
+.prospect-card__unknowns p,
+.prospect-card__unknowns li {
+  margin: 0;
+  color: var(--muted);
+  font-size: .9rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.prospect-card__clamped {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.prospect-card__meta {
+  display: grid;
+  gap: .35rem;
+  padding-top: .75rem;
+  border-top: 1px solid var(--line);
+}
+
+.prospect-card__meta p {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, .75fr) minmax(0, 1fr);
+  gap: .5rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.prospect-card__meta span {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.prospect-card__unknowns ul {
+  display: grid;
+  gap: .25rem;
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.prospect-card__more {
+  margin-top: .35rem !important;
+  font-weight: 650;
+}
+
+.prospect-card__footer {
+  display: grid;
+  gap: .6rem;
+  margin-top: auto;
+  padding: 1rem 1.15rem 1.15rem;
+  border-top: 1px solid var(--line);
+}
+
+.prospect-card__source,
+.prospect-card__details,
+.peer-network-link__action {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  border-radius: .7rem;
+  padding: .7rem .85rem;
+  font-size: .86rem;
+  font-weight: 750;
+  line-height: 1.35;
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.prospect-card__source,
+.peer-network-link__action {
+  background: var(--accent);
+  color: #fff;
+}
+
+.prospect-card__details {
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.prospect-card__source-unavailable {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--line);
+  border-radius: .7rem;
+  padding: .7rem .85rem;
+  color: var(--muted);
+  font-size: .82rem;
+  text-align: center;
+}
+
+.peer-network-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--panel);
+  padding: 1.25rem;
+}
+
+.peer-network-link__copy {
+  flex: 1 1 16rem;
+}
+
+.peer-network-link__copy h2 {
+  margin: .4rem 0;
+  font-size: 1.15rem;
+}
+
+.peer-network-link__copy p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-size: .9rem;
+  line-height: 1.5;
+}
+
+.peer-network-link__action {
+  flex: 0 1 auto;
+}
+
+@media (max-width: 36rem) {
+  .peer-network-link__action { width: 100%; }
+}
