@@ -178,7 +178,7 @@ export default function HomePage() {
           <div className="workspace-grid">
             <section className="opportunity-list" aria-label="Opportunity results">
               <div className="list-header"><span>{visible.length} illustrative matches</span><span>Sort: <strong>Fit signal ↓</strong></span></div>
-              {visible.length === 0 ? <div className="empty-state"><span>⌕</span><h3>No opportunities in this view</h3><p>Try another search or reset the filters.</p><button className="quiet-button" onClick={() => { setQuery(""); setFilter("All opportunities"); }}>Clear filters</button></div> : visible.map((item, index) => {
+              {visible.length === 0 ? <div className="empty-state"><span>⌕</span><h3>No opportunities in this view</h3><p>Try another search or reset the filters.</p><button className="quiet-button" onClick={() => { setQuery(""); setFilter("All opportunities"); }}>Clear filters</button><PeerLeadNetworkLink /></div> : visible.map((item, index) => {
                 const decision = decisions[item.id];
                 return <button key={item.id} className={selected?.id === item.id ? "opportunity-card selected" : "opportunity-card"} onClick={() => setSelectedId(item.id)} aria-pressed={selected?.id === item.id}>
                   <div className="card-topline"><span className="source-label"><span className="source-mark">{item.organization.slice(0, 1)}</span>{item.source}</span><span className={item.score >= 85 ? "score-chip high" : "score-chip"}><span>✳</span> {item.score} <small>fit</small></span></div>
@@ -204,7 +204,7 @@ export default function HomePage() {
               <p className="action-note" role="status">{notice}</p>
             </aside> : <aside className="detail-panel empty-detail"><span>◎</span><h3>Select an opportunity</h3><p>Choose a record to inspect its fit signal and open questions.</p></aside>}
           </div>
-          <PeerLeadNetworkLink />
+          {visible.length > 0 && <PeerLeadNetworkLink />}
           <footer className="app-footer"><span>✳ T4L GROWTH™</span><span>Practical tools. Built for freelancer growth.</span><span>Preview build · Not production</span></footer>
           </>}
           {activeNav === "Client profile" && <BriefWorkflowPanel />}
