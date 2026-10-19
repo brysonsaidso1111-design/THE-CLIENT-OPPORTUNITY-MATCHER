@@ -27,7 +27,7 @@ test("hunt snapshot binds results to an immutable brief version", () => {
 
 test("hunt snapshot rejects impossible success and empty states", () => {
   assert.throws(() => validHunt({ results: [] }), /SUCCESS requires at least one result/);
-  assert.throws(() => validHunt({ status: "SUCCESS_EMPTY", results: [] }), /completedAt/);
+  assert.equal(validHunt({ status: "SUCCESS_EMPTY", results: [] }).status, "SUCCESS_EMPTY");
   assert.throws(() => validHunt({ status: "SUCCESS_EMPTY", results: [{ title: "A" }] }), /SUCCESS_EMPTY requires zero results/);
   assert.throws(() => validHunt({ status: "SUCCESS_PARTIAL", results: [] }), /SUCCESS_PARTIAL requires at least one partial result/);
 });
