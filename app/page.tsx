@@ -168,9 +168,9 @@ export default function HomePage() {
             <div className="metric-card"><div className="metric-top"><span>Saved for review</span><span className="metric-icon rose">♡</span></div><div className="metric-value">{Object.values(decisions).filter((v) => v === "Saved").length.toString().padStart(2, "0")}</div><div className="metric-foot">Temporary preview state</div></div>
           </div>
 
-          <div className="section-heading"><div><h2>Opportunity matches</h2><p>Rank is an attention aid. Check the evidence before you act.</p></div><button className="quiet-button" onClick={() => { setQuery(""); setFilter("All opportunities"); setActiveNav("Find opportunities"); }}>Reset view ↺</button></div>
+          <div className="section-heading"><div><h2>Opportunity matches</h2><p>Rank is an attention aid. Check the evidence before you act.</p></div><button className="quiet-button" onClick={() => { setQuery(""); setFilter("All opportunities"); setActiveNav("Search results"); }}>Reset view ↺</button></div>
           <div className="search-row">
-            <label className="search-box"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search role, client, skill..." aria-label="Search opportunities" /><kbd>⌘ K</kbd></label>
+            <label className="search-box"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter displayed sample prospects..." aria-label="Filter displayed sample prospects" /></label>
             <label className="filter-select"><span>View</span><select value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter opportunities"><option>All opportunities</option><option>Strong fit</option><option>Needs verification</option><option>Saved</option></select><span>⌄</span></label>
             <button className="filter-button" onClick={() => setShowEvidence((value) => !value)}>{showEvidence ? "Evidence on" : "Evidence off"} <span>☷</span></button>
           </div>
