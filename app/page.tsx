@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { BriefWorkflowPanel } from "../src/components/brief-workflow-panel";
+import { OpportunityVerdictPanel } from "../src/components/opportunity-verdict-panel";
+import { PeerLeadNetworkLink } from "../src/components/peer-lead-network-link";
 
 type Opportunity = {
   id: string;
@@ -72,14 +75,15 @@ const demoOpportunities: Opportunity[] = [
 
 const navItems = [
   { label: "Overview", icon: "◫" },
-  { label: "Find opportunities", icon: "⌕" },
+  { label: "Search results", icon: "⌕" },
   { label: "Saved", icon: "♡" },
   { label: "Decisions", icon: "✓" },
-  { label: "Profile & fit", icon: "◎" },
+  { label: "Client profile", icon: "◎" },
+  { label: "Opportunity Verdict", icon: "✳" },
 ];
 
 export default function HomePage() {
-  const [activeNav, setActiveNav] = useState("Find opportunities");
+  const [activeNav, setActiveNav] = useState("Search results");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("All opportunities");
   const [selectedId, setSelectedId] = useState("OP-1048");
@@ -122,8 +126,10 @@ export default function HomePage() {
             <button key={item.label} className={activeNav === item.label ? "nav-item active" : "nav-item"} onClick={() => {
               setActiveNav(item.label);
               if (item.label === "Saved") setFilter("Saved");
-              else if (item.label === "Find opportunities") setFilter("All opportunities");
-              else setNotice(item.label === "Profile & fit" ? "Profile editing is a planned workspace surface; this preview uses an illustrative fit profile." : `${item.label} view selected in preview.`);
+              else if (item.label === "Search results") setFilter("All opportunities");
+              else if (item.label === "Client profile") setNotice("Your brief workspace is in preview mode.");
+              else if (item.label === "Opportunity Verdict") setNotice("Verdict analysis requires a completed live search. This preview has no live search results.");
+              else setNotice(`${item.label} view selected in preview.`);
             }}>
               <span className="nav-icon" aria-hidden="true">{item.icon}</span><span>{item.label}</span>
               {item.label === "Saved" && <span className="nav-count">{Object.values(decisions).filter((v) => v === "Saved").length}</span>}
@@ -149,9 +155,10 @@ export default function HomePage() {
 
         <div className="page-content">
           <div className="preview-notice"><span className="notice-icon">ⓘ</span><p><strong>Interactive preview · sample records only</strong><br />These opportunities are illustrative UI data. No live source has been queried, and actions are temporary in this browser session.</p><button onClick={() => setNotice("Preview limitation: provider integrations, account persistence, and production access controls are not connected in this interface yet.")} aria-label="Preview details">Details ↗</button></div>
+          {activeNav !== "Client profile" && activeNav !== "Opportunity Verdict" && <>
           <div className="page-heading">
             <div><div className="eyebrow">YOUR OPPORTUNITY PIPELINE</div><h1>Find work that <em>fits.</em></h1><p>Evaluate opportunities with evidence, clear constraints, and a reasoned fit—not guesswork.</p></div>
-            <button className="primary-button" onClick={() => { setActiveNav("Profile & fit"); setNotice("The profile setup flow is not connected yet. Current matching uses a sample profile."); }}>＋ Configure your fit profile</button>
+            <button className="primary-button" onClick={() => setActiveNav("Client profile")}>Edit brief</button>
           </div>
 
           <div className="metric-grid">
@@ -197,7 +204,11 @@ export default function HomePage() {
               <p className="action-note" role="status">{notice}</p>
             </aside> : <aside className="detail-panel empty-detail"><span>◎</span><h3>Select an opportunity</h3><p>Choose a record to inspect its fit signal and open questions.</p></aside>}
           </div>
-          <footer className="app-footer"><span>✳ T4L GROWTH</span><span>Built for evidence-led client acquisition</span><span>Preview build · Not production</span></footer>
+          <PeerLeadNetworkLink />
+          <footer className="app-footer"><span>✳ T4L GROWTH™</span><span>Practical tools. Built for freelancer growth.</span><span>Preview build · Not production</span></footer>
+          </>}
+          {activeNav === "Client profile" && <BriefWorkflowPanel />}
+          {activeNav === "Opportunity Verdict" && <OpportunityVerdictPanel />}
         </div>
       </section>
     </main>
