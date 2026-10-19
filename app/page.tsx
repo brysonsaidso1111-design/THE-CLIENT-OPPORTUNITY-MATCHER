@@ -117,8 +117,8 @@ export default function HomePage() {
     <main className="app-frame">
       <aside className="sidebar">
         <a className="brand" href="#workspace" aria-label="T4L Growth home">
-          <span className="brand-mark">T4</span>
-          <span className="brand-copy"><strong>T4L GROWTH</strong><small>CLIENT OPPORTUNITY MATCHER</small></span>
+          <span className="brand-mark exploded-t" aria-hidden="true"><i /><i /><i /></span>
+          <span className="brand-copy"><strong>T4L GROWTH™</strong><small>THE CLIENT OPPORTUNITY MATCHER</small><small className="brand-byline">by Terrence</small></span>
         </a>
         <div className="workspace-label">WORKSPACE</div>
         <nav className="main-nav" aria-label="Main navigation">
