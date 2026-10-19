@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 function configuredInviteUrl(): string | null {
-  const value = process.env.PEER_LEAD_NETWORK_URL;
+  const value = process.env.NEXT_PUBLIC_PEER_LEAD_NETWORK_URL;
   if (!value) return null;
 
   try {
