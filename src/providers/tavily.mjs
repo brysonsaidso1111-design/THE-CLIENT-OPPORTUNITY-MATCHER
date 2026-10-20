@@ -76,6 +76,46 @@ export function buildTavilyQuery(hunt) {
   return query;
 }
 
+export function buildTavilyQueryFamily(hunt) {
+  if (!hunt || typeof hunt !== "object") {
+    return [buildTavilyQuery(hunt)];
+  }
+
+  const serviceTerms = [
+    hunt.service,
+    ...(Array.isArray(hunt.capabilities) ? hunt.capabilities : []),
+    hunt.industry,
+    hunt.targetClientType,
+    hunt.location,
+  ].filter((value) => typeof value === "string" && value.trim());
+
+  const needTerms = [
+    hunt.problemSolved,
+    hunt.deliverable,
+    hunt.targetClientType,
+    hunt.industry,
+    hunt.location,
+  ].filter((value) => typeof value === "string" && value.trim());
+
+  const projectTerms = [
+    hunt.service,
+    hunt.targetClientType,
+    hunt.location,
+    "project contract procurement RFP",
+  ].filter((value) => typeof value === "string" && value.trim());
+
+  const candidates = [
+    [...serviceTerms, "project contract request for proposal seeking freelancer"].join(" "),
+    [...needTerms, "looking for vendor project announcement"].join(" "),
+    projectTerms.join(" "),
+  ];
+  const seen = new Set();
+  return candidates
+    .map((query) => query.slice(0, MAX_QUERY_LENGTH).trim())
+    .filter((query) => query && !seen.has(query) && seen.add(query))
+    .slice(0, 3);
+}
+
 export function assessTavilyFreshness(result, options = {}) {
   const now = options.now instanceof Date ? options.now : new Date();
   const freshnessDays = clampInteger(options.freshnessDays, MAX_FRESHNESS_DAYS, 1, MAX_FRESHNESS_DAYS);
