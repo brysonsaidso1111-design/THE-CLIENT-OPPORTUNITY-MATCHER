@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   assessTavilyFreshness,
   buildTavilyQuery,
+  buildTavilyQueryFamily,
   classifyDiscoveryObservation,
   searchTavily,
   TavilyProviderError,
@@ -29,6 +30,23 @@ test("buildTavilyQuery creates a bounded query from structured Hunt fields", () 
   assert.match(query, /ecommerce/);
   assert.match(query, /request for proposal/);
   assert.ok(query.length <= 400);
+});
+
+test("query families are prioritized, deduplicated, and bounded to three", () => {
+  const family = buildTavilyQueryFamily({
+    service: "website design",
+    capabilities: ["ecommerce"],
+    problemSolved: "low online conversion",
+    deliverable: "website redesign",
+    targetClientType: "retail businesses",
+    location: "United States",
+  });
+  assert.equal(family.length, 3);
+  assert.match(family[0], /website design/);
+  assert.match(family[0], /request for proposal/);
+  assert.match(family[1], /low online conversion/);
+  assert.match(family[2], /procurement RFP/);
+  assert.ok(family.every((query) => query.length <= 400));
 });
 
 test("buildTavilyQuery rejects an empty or overlong raw query", () => {
